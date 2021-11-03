@@ -28,6 +28,8 @@ buildNumber.properties
 ## IntelliJ
 ##############################
 out/
+logs/
+system/
 .idea/
 .idea_modules/
 *.iml
