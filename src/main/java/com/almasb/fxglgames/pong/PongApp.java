@@ -30,9 +30,13 @@ import com.almasb.fxgl.animation.Interpolators;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
 import com.almasb.fxgl.core.math.FXGLMath;
+import com.almasb.fxgl.core.serialization.Bundle;
 import com.almasb.fxgl.entity.Entity;
 import com.almasb.fxgl.entity.SpawnData;
+import com.almasb.fxgl.input.Input;
 import com.almasb.fxgl.input.UserAction;
+import com.almasb.fxgl.multiplayer.MultiplayerService;
+import com.almasb.fxgl.net.Connection;
 import com.almasb.fxgl.physics.CollisionHandler;
 import com.almasb.fxgl.physics.HitBox;
 import com.almasb.fxgl.ui.UI;
@@ -51,41 +55,62 @@ import static com.almasb.fxgl.dsl.FXGL.*;
  * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
  */
 public class PongApp extends GameApplication {
+    boolean isServer;
+    private Connection<Bundle> connection;
 
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setTitle("Pong");
         settings.setVersion("1.0");
         settings.setFontUI("pong.ttf");
+        settings.addEngineService(MultiplayerService.class); //Required for muliplayer servcie
     }
 
-    private BatComponent playerBat;
+    private BatComponent playerBat1;
+    private BatComponent playerBat2;
+    private Input clientInput;
 
-    @Override
-    protected void initInput() {
+    protected void initServerInput() {
         getInput().addAction(new UserAction("Up") {
             @Override
             protected void onAction() {
-                playerBat.up();
+                playerBat1.up();
             }
 
             @Override
             protected void onActionEnd() {
-                playerBat.stop();
+                playerBat1.stop();
             }
         }, KeyCode.W);
 
         getInput().addAction(new UserAction("Down") {
             @Override
             protected void onAction() {
-                playerBat.down();
+                playerBat1.down();
             }
 
             @Override
             protected void onActionEnd() {
-                playerBat.stop();
+                playerBat1.stop();
             }
         }, KeyCode.S);
+
+        //Used for setting up input on the client
+        clientInput = new Input();
+
+        onKeyBuilder(clientInput, KeyCode.W)
+                .onAction(() -> {
+                    playerBat2.up();
+                }).onActionEnd(() -> {
+                    playerBat2.stop();
+                });
+
+        onKeyBuilder(clientInput, KeyCode.S)
+                .onAction(() -> {
+                    playerBat2.down();
+                }).onActionEnd(() -> {
+                    playerBat2.stop();
+                });
     }
 
     @Override
@@ -96,28 +121,87 @@ public class PongApp extends GameApplication {
 
     @Override
     protected void initGame() {
-        getWorldProperties().<Integer>addListener("player1score", (old, newScore) -> {
-            if (newScore == 11) {
-                showGameOver("Player 1");
-            }
-        });
+        runOnce(() -> {
+            getDialogService().showConfirmationBox("Are you the host?", yes -> {
+                isServer = yes;
 
-        getWorldProperties().<Integer>addListener("player2score", (old, newScore) -> {
-            if (newScore == 11) {
-                showGameOver("Player 2");
-            }
-        });
+                getWorldProperties().<Integer>addListener("player1score", (old, newScore) -> {
+                    if (newScore == 11) {
+                        showGameOver("Player 1");
+                    }
+                });
 
-        getGameWorld().addEntityFactory(new PongFactory());
+                getWorldProperties().<Integer>addListener("player2score", (old, newScore) -> {
+                    if (newScore == 11) {
+                        showGameOver("Player 2");
+                    }
+                });
 
-        getGameScene().setBackgroundColor(Color.rgb(0, 0, 5));
+                //this line is needed in order for entities to be spawned
+                getGameScene().setBackgroundColor(Color.rgb(0, 0, 5));
+                //Add background color to the game window.
+                getGameWorld().addEntityFactory(new PongFactory());
 
-        initScreenBounds();
-        initGameObjects();
+                initScreenBounds();
+
+
+                if (isServer) {
+                    //Setup the TCP port that the server will listen at.
+                    var server = getNetService().newTCPServer(7777);
+                    server.setOnConnected(conn -> {
+                        connection = conn;
+
+                        //Setup the entities and other necessary items on the server.
+                        getExecutor().startAsyncFX(() -> onServer());
+                    });
+
+                    //Start listening on the specified TCP port.
+                    server.startAsync();
+
+                } else {
+                    //Setup the connection to the server.
+                    var client = getNetService().newTCPClient("localhost", 7777);
+                    client.setOnConnected(conn -> {
+                        connection = conn;
+
+                        //Enable the client to receive data from the server.
+                        getExecutor().startAsyncFX(() -> onClient());
+                    });
+
+                    //Establish the connection to the server.
+                    client.connectAsync();
+                }
+            });
+        }, Duration.seconds(0.5));
     }
 
-    @Override
-    protected void initPhysics() {
+    //Code to setup entities on other necessities on the server.
+    private void onServer() {
+        initServerInput();
+        initServerPhysics();
+        //Spawn the player for the server
+        Entity ball = spawn("ball", new SpawnData(getAppWidth() / 2 - 5, getAppHeight() / 2 - 5).put("exists", true));;
+        getService(MultiplayerService.class).spawn(connection, ball, "ball");
+        Entity bat1 = spawn("bat", new SpawnData(getAppWidth() / 4, getAppHeight() / 2 - 30).put("exists", true));
+        getService(MultiplayerService.class).spawn(connection, bat1, "bat");
+        Entity bat2 = spawn("bat", new SpawnData(3 * getAppWidth() / 4 - 20, getAppHeight() / 2 - 30).put("exists", true));
+        getService(MultiplayerService.class).spawn(connection, bat2, "bat");
+
+        playerBat1 = bat1.getComponent(BatComponent.class);
+        playerBat2 = bat2.getComponent(BatComponent.class);
+
+        getService(MultiplayerService.class).addInputReplicationReceiver(connection, clientInput);
+        getService(MultiplayerService.class).addPropertyReplicationSender(connection, getWorldProperties());
+    }
+
+    //Code to setup the client
+    private void onClient() {
+        getService(MultiplayerService.class).addEntityReplicationReceiver(connection, getGameWorld());
+        getService(MultiplayerService.class).addPropertyReplicationReceiver(connection, getWorldProperties());
+        getService(MultiplayerService.class).addInputReplicationSender(connection, getInput());
+    }
+
+    protected void initServerPhysics() {
         getPhysicsWorld().setGravity(0, 0);
 
         getPhysicsWorld().addCollisionHandler(new CollisionHandler(EntityType.BALL, EntityType.WALL) {
@@ -143,7 +227,6 @@ public class PongApp extends GameApplication {
         };
 
         getPhysicsWorld().addCollisionHandler(ballBatHandler);
-        getPhysicsWorld().addCollisionHandler(ballBatHandler.copyFor(EntityType.BALL, EntityType.ENEMY_BAT));
     }
 
     @Override
@@ -166,14 +249,6 @@ public class PongApp extends GameApplication {
         getGameWorld().addEntity(walls);
     }
 
-    private void initGameObjects() {
-        Entity ball = spawn("ball", getAppWidth() / 2 - 5, getAppHeight() / 2 - 5);
-        Entity bat1 = spawn("bat", new SpawnData(getAppWidth() / 4, getAppHeight() / 2 - 30).put("isPlayer", true));
-        Entity bat2 = spawn("bat", new SpawnData(3 * getAppWidth() / 4 - 20, getAppHeight() / 2 - 30).put("isPlayer", false));
-
-        playerBat = bat1.getComponent(BatComponent.class);
-    }
-
     private void playHitAnimation(Entity bat) {
         animationBuilder()
                 .autoReverse(true)
@@ -188,6 +263,15 @@ public class PongApp extends GameApplication {
     private void showGameOver(String winner) {
         getDialogService().showMessageBox(winner + " won! Demo over\nThanks for playing", getGameController()::exit);
     }
+
+    //This method is needed in order to move the client player.
+    @Override
+    protected void onUpdate(double tpf) {
+        if (isServer && clientInput != null) {
+            clientInput.update(tpf);
+        }
+    }
+
 
     public static void main(String[] args) {
         launch(args);
