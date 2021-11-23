@@ -69,6 +69,7 @@ public class PongApp extends GameApplication {
     private BatComponent playerBat1;
     private BatComponent playerBat2;
     private Input clientInput;
+    private String ipAddress;
 
     protected void initServerInput() {
         getInput().addAction(new UserAction("Up") {
@@ -159,17 +160,21 @@ public class PongApp extends GameApplication {
                     server.startAsync();
 
                 } else {
-                    //Setup the connection to the server.
-                    var client = getNetService().newTCPClient("localhost", 7777);
-                    client.setOnConnected(conn -> {
-                        connection = conn;
+                    getDialogService().showInputBox("Enter server ip address", answer -> {
+                        ipAddress = answer;
 
-                        //Enable the client to receive data from the server.
-                        getExecutor().startAsyncFX(() -> onClient());
+                        //Setup the connection to the server.
+                        var client = getNetService().newTCPClient(ipAddress, 7777);
+                        client.setOnConnected(conn -> {
+                            connection = conn;
+
+                            //Enable the client to receive data from the server.
+                            getExecutor().startAsyncFX(() -> onClient());
+                        });
+
+                        //Establish the connection to the server.
+                        client.connectAsync();
                     });
-
-                    //Establish the connection to the server.
-                    client.connectAsync();
                 }
             });
         }, Duration.seconds(0.5));
