@@ -31,6 +31,7 @@ import com.almasb.fxgl.entity.EntityFactory;
 import com.almasb.fxgl.entity.SpawnData;
 import com.almasb.fxgl.entity.Spawns;
 import com.almasb.fxgl.entity.components.CollidableComponent;
+import com.almasb.fxgl.multiplayer.NetworkComponent;
 import com.almasb.fxgl.particle.ParticleComponent;
 import com.almasb.fxgl.particle.ParticleEmitter;
 import com.almasb.fxgl.particle.ParticleEmitters;
@@ -51,6 +52,7 @@ import static com.almasb.fxgl.dsl.FXGL.getip;
  * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
  */
 public class PongFactory implements EntityFactory {
+
 
     @Spawns("ball")
     public Entity newBall(SpawnData data) {
@@ -78,30 +80,66 @@ public class PongFactory implements EntityFactory {
         emitter.setSize(5, 10);
         emitter.setEmissionRate(1);
 
+        boolean exists;
+        try {
+            exists = data.get("exists");
+        }
+        catch (Exception e) {
+            exists = false;
+        }
+
+        if (exists) {
+            return entityBuilder(data)
+                    .from(data)
+                    .type(EntityType.BALL)
+                    .bbox(new HitBox(BoundingShape.circle(5)))
+                    .with(physics)
+                    .with(new CollidableComponent(true))
+                    .with(new ParticleComponent(emitter))
+                    .with(new BallComponent())
+                    .with(new NetworkComponent()) //Needed for network service
+                    .build();
+        }
         return entityBuilder(data)
+                .from(data)
                 .type(EntityType.BALL)
                 .bbox(new HitBox(BoundingShape.circle(5)))
-                .with(physics)
                 .with(new CollidableComponent(true))
                 .with(new ParticleComponent(emitter))
-                .with(new BallComponent())
+                .with(new NetworkComponent()) //Needed for network service
                 .build();
     }
 
     @Spawns("bat")
     public Entity newBat(SpawnData data) {
-        boolean isPlayer = data.get("isPlayer");
+        boolean exists;
+        try {
+            exists = data.get("exists");
+        }
+        catch (Exception e) {
+            exists = false;
+        }
 
         PhysicsComponent physics = new PhysicsComponent();
         physics.setBodyType(BodyType.KINEMATIC);
 
+        if (exists) {
+            return entityBuilder()
+                    .from(data)
+                    .type(EntityType.PLAYER_BAT)
+                    .viewWithBBox(new Rectangle(20, 60, Color.LIGHTGRAY))
+                    .with(new CollidableComponent(true))
+                    .with(physics)
+                    .with(new BatComponent())
+                    .with(new NetworkComponent()) //Needed for network service
+                    .build();
+        }
         return entityBuilder()
                 .from(data)
-                .type(isPlayer ? EntityType.PLAYER_BAT : EntityType.ENEMY_BAT)
+                .type(EntityType.PLAYER_BAT)
                 .viewWithBBox(new Rectangle(20, 60, Color.LIGHTGRAY))
                 .with(new CollidableComponent(true))
-                .with(physics)
-                .with(isPlayer ? new BatComponent() : new EnemyBatComponent())
+                .with(new NetworkComponent()) //Needed for network service
                 .build();
     }
 }
