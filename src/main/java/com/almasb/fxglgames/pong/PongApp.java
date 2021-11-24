@@ -54,7 +54,10 @@ import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
+import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A simple clone of Pong.
@@ -212,7 +215,7 @@ public class PongApp extends GameApplication {
     }
     
     private void connectClient() {
-        getDialogService().showInputBox("Enter server ip address", answer -> {
+        getDialogService().showInputBox("Enter Server IP Address", answer -> {
             ipAddress = answer;
             
             try {
@@ -235,8 +238,12 @@ public class PongApp extends GameApplication {
 
                 //Establish the connection to the server.
                 client.connectAsync();
-            } catch (Exception e) {
-                getDialogService().showMessageBox("Server IP Address not found. Try Again!", () -> {
+            } catch (RuntimeException e) {
+                getDialogService().showErrorBox("Server IP Address not found. Try Again!", () -> {
+                    connectClient(); 
+                });
+            } catch (IOException ex) {
+                getDialogService().showErrorBox("Unreacheable Host. Try Again!", () -> {
                     connectClient(); 
                 });
             }
