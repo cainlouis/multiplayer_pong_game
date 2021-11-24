@@ -29,6 +29,7 @@ package com.almasb.fxglgames.pong;
 import com.almasb.fxgl.animation.Interpolators;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
+import com.almasb.fxgl.app.MenuItem;
 import com.almasb.fxgl.core.math.FXGLMath;
 import com.almasb.fxgl.core.serialization.Bundle;
 import com.almasb.fxgl.entity.Entity;
@@ -39,11 +40,16 @@ import com.almasb.fxgl.multiplayer.MultiplayerService;
 import com.almasb.fxgl.net.Connection;
 import com.almasb.fxgl.physics.CollisionHandler;
 import com.almasb.fxgl.physics.HitBox;
+import com.almasb.fxgl.profile.DataFile;
+import com.almasb.fxgl.profile.SaveLoadHandler;
 import com.almasb.fxgl.ui.UI;
+import javafx.beans.property.IntegerProperty;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
@@ -63,7 +69,10 @@ public class PongApp extends GameApplication {
         settings.setTitle("Pong");
         settings.setVersion("1.0");
         settings.setFontUI("pong.ttf");
-        settings.addEngineService(MultiplayerService.class); //Required for muliplayer servcie
+        settings.addEngineService(MultiplayerService.class); //Required for muliplayer service
+
+        settings.setMainMenuEnabled(true);
+        settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
     }
 
     private BatComponent playerBat1;
@@ -118,6 +127,40 @@ public class PongApp extends GameApplication {
     protected void initGameVars(Map<String, Object> vars) {
         vars.put("player1score", 0);
         vars.put("player2score", 0);
+    }
+
+    @Override
+    protected void onPreInit() {
+        getSaveLoadService().addHandler(new SaveLoadHandler() {
+            @Override
+            public void onSave(DataFile data) {
+                // create a new bundle to store your data
+                var bundle = new Bundle("gameData");
+
+                // store some data
+                IntegerProperty player1score = getip("player1score");
+                bundle.put("player1score", player1score.get());
+                IntegerProperty player2score = getip("player2score");
+                bundle.put("player2score", player2score.get());
+
+                // give the bundle to data file
+                data.putBundle(bundle);
+            }
+
+            @Override
+            public void onLoad(DataFile data) {
+                // get your previously saved bundle
+                var bundle = data.getBundle("gameData");
+
+                // retrieve some data
+                int player1score = bundle.get("player1score");
+                int player2score = bundle.get("player2score");
+
+                // update your game with saved data
+                set("player1score", player1score);
+                set("player2score", player2score);
+            }
+        });
     }
 
     @Override
