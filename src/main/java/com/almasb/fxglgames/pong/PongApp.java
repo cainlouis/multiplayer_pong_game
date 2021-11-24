@@ -48,11 +48,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.net.InetAddress;
 import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
+import java.net.UnknownHostException;
 
 /**
  * A simple clone of Pong.
@@ -168,7 +170,7 @@ public class PongApp extends GameApplication {
         runOnce(() -> {
             getDialogService().showConfirmationBox("Are you the host?", yes -> {
                 isServer = yes;
-
+                
                 getWorldProperties().<Integer>addListener("player1score", (old, newScore) -> {
                     if (newScore == 11) {
                         showGameOver("Player 1");
@@ -203,26 +205,43 @@ public class PongApp extends GameApplication {
                     server.startAsync();
 
                 } else {
-                    getDialogService().showInputBox("Enter server ip address", answer -> {
-                        ipAddress = answer;
-
-                        //Setup the connection to the server.
-                        var client = getNetService().newTCPClient(ipAddress, 7777);
-                        client.setOnConnected(conn -> {
-                            connection = conn;
-
-                            //Enable the client to receive data from the server.
-                            getExecutor().startAsyncFX(() -> onClient());
-                        });
-
-                        //Establish the connection to the server.
-                        client.connectAsync();
-                    });
+                    connectClient();
                 }
             });
         }, Duration.seconds(0.5));
     }
+    
+    private void connectClient() {
+        getDialogService().showInputBox("Enter server ip address", answer -> {
+            ipAddress = answer;
+            
+            try {
+                InetAddress address = InetAddress.getByName(ipAddress);
+                boolean reachable = address.isReachable(5000);
 
+                System.out.println("Is host reachable? " + reachable);
+                if (!reachable) {
+                    throw new RuntimeException("Server IP Address not found. Try Again!");
+                }
+                
+                //Setup the connection to the server.
+                var client = getNetService().newTCPClient(ipAddress, 7777);
+                client.setOnConnected(conn -> {
+                    connection = conn;
+
+                    //Enable the client to receive data from the server.
+                    getExecutor().startAsyncFX(() -> onClient());
+                });
+
+                //Establish the connection to the server.
+                client.connectAsync();
+            } catch (Exception e) {
+                getDialogService().showMessageBox("Server IP Address not found. Try Again!", () -> {
+                    connectClient(); 
+                });
+            }
+        });
+    }
     //Code to setup entities on other necessities on the server.
     private void onServer() {
         initServerInput();
@@ -261,7 +280,7 @@ public class PongApp extends GameApplication {
                     inc("player1score", +1);
                 }
 
-                play("hit_wall.wav");
+                //play("hit_wall.wav");
                 getGameScene().getViewport().shakeTranslational(5);
             }
         });
@@ -269,7 +288,7 @@ public class PongApp extends GameApplication {
         CollisionHandler ballBatHandler = new CollisionHandler(EntityType.BALL, EntityType.PLAYER_BAT) {
             @Override
             protected void onCollisionBegin(Entity a, Entity bat) {
-                play("hit_bat.wav");
+                //play("hit_bat.wav");
                 playHitAnimation(bat);
             }
         };
