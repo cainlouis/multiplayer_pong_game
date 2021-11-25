@@ -56,8 +56,6 @@ import java.util.Map;
 import static com.almasb.fxgl.dsl.FXGL.*;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A simple clone of Pong.
