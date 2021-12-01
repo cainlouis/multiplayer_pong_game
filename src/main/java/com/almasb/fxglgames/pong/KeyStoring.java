@@ -2,9 +2,7 @@ package com.almasb.fxglgames.pong;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.security.*;
 import java.security.KeyStore.*;
 import java.security.cert.Certificate;
@@ -16,16 +14,31 @@ public class KeyStoring {
     private static final String SECRET_KEY = "secretKey";
     private static final  String dir = "src/main/resources/keystore/keystore.p12";
     private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
-    public KeyStoring(String password){
+
+    public KeyStoring(String password) throws KeyStoreException {
         this.password = password;
         cmdArg[cmdArg.length-1] = password;
+        keyStore = KeyStore.getInstance("PKCS12");
     }
 
+    // Run just the first time when the file does not exist
     public void createStoredKeys(){
         try {
             // Create the private and public key using keytool command.
             ProcessBuilder processBuilder = new ProcessBuilder().command(cmdArg);
-            processBuilder.start();
+            Process pro = processBuilder.start();
+            try (var reader = new BufferedReader(
+                    new InputStreamReader(pro.getInputStream()))) {
+
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+            }
+
+
+
             //Create the secret key and store it in the keystore file
             saveSecretKey();
 
@@ -38,6 +51,7 @@ public class KeyStoring {
         //loads the p12 file and checks if the hash matches with the keystore's hash.
         FileInputStream fi = new FileInputStream(dir);
         keyStore.load(fi, password.toCharArray());
+
         if(fi != null){
             fi.close();
         }
@@ -53,6 +67,15 @@ public class KeyStoring {
         // creates a new entry in the p12 file with the secret key
         SecretKeyEntry skEntry = new SecretKeyEntry(sk);
         keyStore.setEntry(SECRET_KEY, skEntry, protParam);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(dir);
+            keyStore.store(fos, password.toCharArray());
+        } finally {
+            if (fos != null) {
+                fos.close();
+            }
+        }
     }
 
 //Generates a Secret key using AES Algorithm
