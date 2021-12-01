@@ -55,8 +55,12 @@ import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A simple clone of Pong.
@@ -195,18 +199,31 @@ public class PongApp extends GameApplication {
 
 
                 if (isServer) {
-                    //Setup the TCP port that the server will listen at.
-                    var server = getNetService().newTCPServer(TCP_SERVER_PORT);
-                    server.setOnConnected(conn -> {
-                        connection = conn;
+                    try {
+                        //Setup the TCP port that the server will listen at.
+                        var server = getNetService().newTCPServer(TCP_SERVER_PORT);
+                        System.out.println(server.getClass());
                         
-                        
-                        //Setup the entities and other necessary items on the server.
-                        getExecutor().startAsyncFX(() -> onServer());
-                    });
+                        if (!hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
+                            throw new RuntimeException();
+                        }
+                    
+                        server.setOnConnected(conn -> {
+                            connection = conn;
 
-                    //Start listening on the specified TCP port.
-                    server.startAsync();
+
+                            //Setup the entities and other necessary items on the server.
+                            getExecutor().startAsyncFX(() -> onServer());
+                        });
+
+                        //Start listening on the specified TCP port.
+                        server.startAsync();
+                    }
+                    catch (RuntimeException | IOException e) {
+                        getDialogService().showErrorBox("Can't create new host! Server is already hosting.", () -> {
+                            connectClient();
+                        });
+                    }
 
                 } else {
                     connectClient();
@@ -224,10 +241,10 @@ public class PongApp extends GameApplication {
                 boolean reachable = address.isReachable(2000);
                 
                 // Checks if can connect to IP Address and checks if the port is free
-                if (!reachable || !hostAvailabilityCheck(ipAddress, TCP_SERVER_PORT)) {
+                if (!reachable || hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
                     throw new RuntimeException("Server IP Address not found. Try Again!");
                 }
-//                if (!reachable) {
+//                if (!reachable) {  
 //                    throw new RuntimeException("Server IP Address not found. Try Again!");
 //                }
                 
@@ -257,20 +274,25 @@ public class PongApp extends GameApplication {
             }
         });
     }
-    public boolean hostAvailabilityCheck(String ipAddress, int port ) throws IOException { 
-        try {
-            Socket socket = new Socket(ipAddress, port);
-            socket.close();
+    
+    /**
+     * Checks if port on server is available 
+     * @param port
+     * @return
+     * @throws IOException 
+     */
+    public boolean hostPortAvailabilityCheck(int port) throws IOException { 
+        try (ServerSocket ss = new ServerSocket(port)) {
             return true;
-        } catch (IOException ex) {
-            //nothing
+        } catch (IOException e) {
+            return false;
         }
-        return false;
     }
     //Code to setup entities on other necessities on the server.
     private void onServer() {
         initServerInput();
         initServerPhysics();
+        
         //Spawn the player for the server
         Entity ball = spawn("ball", new SpawnData(getAppWidth() / 2 - 5, getAppHeight() / 2 - 5).put("exists", true));;
         getService(MultiplayerService.class).spawn(connection, ball, "ball");
