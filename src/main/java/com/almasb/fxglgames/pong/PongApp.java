@@ -46,9 +46,18 @@ import javafx.beans.property.IntegerProperty;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+
+import java.net.InetAddress;
+import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 /**
  * A simple clone of Pong.
@@ -57,6 +66,7 @@ import static com.almasb.fxgl.dsl.FXGL.*;
  * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
  */
 public class PongApp extends GameApplication {
+    private final int TCP_SERVER_PORT = 7777;
     boolean isServer;
     private Connection<Bundle> connection;
 
@@ -174,7 +184,7 @@ public class PongApp extends GameApplication {
         runOnce(() -> {
             getDialogService().showConfirmationBox("Are you the host?", yes -> {
                 isServer = yes;
-
+                
                 getWorldProperties().<Integer>addListener("player1score", (old, newScore) -> {
                     if (newScore == 11) {
                         showGameOver("Player 1");
@@ -196,43 +206,97 @@ public class PongApp extends GameApplication {
 
 
                 if (isServer) {
-                    //Setup the TCP port that the server will listen at.
-                    var server = getNetService().newTCPServer(7777);
-                    server.setOnConnected(conn -> {
-                        connection = conn;
-
-                        //Setup the entities and other necessary items on the server.
-                        getExecutor().startAsyncFX(() -> onServer());
-                    });
-
-                    //Start listening on the specified TCP port.
-                    server.startAsync();
-
-                } else {
-                    getDialogService().showInputBox("Enter server ip address", answer -> {
-                        ipAddress = answer;
-
-                        //Setup the connection to the server.
-                        var client = getNetService().newTCPClient(ipAddress, 7777);
-                        client.setOnConnected(conn -> {
+                    try {
+                        //Setup the TCP port that the server will listen at.
+                        var server = getNetService().newTCPServer(TCP_SERVER_PORT);
+                        System.out.println(server.getClass());
+                        
+                        // Checks if server port is already occupied by another host
+                        if (!hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
+                            throw new RuntimeException();
+                        }
+                    
+                        server.setOnConnected(conn -> {
                             connection = conn;
 
-                            //Enable the client to receive data from the server.
-                            getExecutor().startAsyncFX(() -> onClient());
+                            //Setup the entities and other necessary items on the server.
+                            getExecutor().startAsyncFX(() -> onServer());
                         });
 
-                        //Establish the connection to the server.
-                        client.connectAsync();
-                    });
+                        //Start listening on the specified TCP port.
+                        server.startAsync();
+                    }
+                    catch (RuntimeException | IOException e) {
+                        getDialogService().showErrorBox("Can't create new host! Server is already hosting.", () -> {
+                            connectClient();
+                        });
+                    }
+
+                } else {
+                    connectClient();
                 }
             });
         }, Duration.seconds(0.5));
     }
+    
+    private void connectClient() {
+        getDialogService().showInputBox("Enter Server IP Address", answer -> {
+            ipAddress = answer;
+            
+            try {
+                InetAddress address = InetAddress.getByName(ipAddress);
+                boolean reachable = address.isReachable(2000);
+                
+                // Checks if can connect to IP Address and checks if the port is free
+                if (!reachable || hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
+                    throw new RuntimeException("Server IP Address not found. Try Again!");
+                }
+                
+                //Setup the connection to the server.
+                var client = getNetService().newTCPClient(ipAddress, TCP_SERVER_PORT);
+                client.setOnConnected(conn -> {
+                    connection = conn;
 
+                    //Enable the client to receive data from the server.
+                    getExecutor().startAsyncFX(() -> onClient());
+                });
+
+                //Establish the connection to the server.
+                client.connectAsync();
+            } catch (RuntimeException e) {
+                getDialogService().showErrorBox("Server IP Address is not currently hosting. Try Again!", () -> {
+                    connectClient(); 
+                });
+            } catch (IOException ex) {
+                getDialogService().showErrorBox("Unreacheable Host/Invalid Input. Try Again!", () -> {
+                    connectClient(); 
+                });
+            } catch (Exception e) {
+                getDialogService().showErrorBox("An error has occurred. Try Again!", () -> {
+                    connectClient(); 
+                });
+            }
+        });
+    }
+    
+    /**
+     * Checks if port on server is available 
+     * @param port
+     * @return
+     * @throws IOException 
+     */
+    public boolean hostPortAvailabilityCheck(int port) throws IOException { 
+        try (ServerSocket ss = new ServerSocket(port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
     //Code to setup entities on other necessities on the server.
     private void onServer() {
         initServerInput();
         initServerPhysics();
+        
         //Spawn the player for the server
         Entity ball = spawn("ball", new SpawnData(getAppWidth() / 2 - 5, getAppHeight() / 2 - 5).put("exists", true));;
         getService(MultiplayerService.class).spawn(connection, ball, "ball");
@@ -267,7 +331,7 @@ public class PongApp extends GameApplication {
                     inc("player1score", +1);
                 }
 
-                play("hit_wall.wav");
+                //play("hit_wall.wav");
                 getGameScene().getViewport().shakeTranslational(5);
             }
         });
@@ -275,7 +339,7 @@ public class PongApp extends GameApplication {
         CollisionHandler ballBatHandler = new CollisionHandler(EntityType.BALL, EntityType.PLAYER_BAT) {
             @Override
             protected void onCollisionBegin(Entity a, Entity bat) {
-                play("hit_bat.wav");
+                //play("hit_bat.wav");
                 playHitAnimation(bat);
             }
         };
