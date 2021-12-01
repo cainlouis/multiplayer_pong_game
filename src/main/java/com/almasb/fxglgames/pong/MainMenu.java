@@ -23,7 +23,7 @@ public class MainMenu extends FXGLMenu {
     public MainMenu() {
         super(MenuType.MAIN_MENU);
 
-        Text text = getUIFactoryService().newText("Pong Game", Color.DARKVIOLET, 60.0);
+        Text text = getUIFactoryService().newText("Pong Game", Color.BLACK, 60.0);
         text.setTranslateX(FXGL.getAppWidth() / 2 - 250 / 2);
         text.setTranslateY(FXGL.getAppHeight() / 2 - 300 / 2);
 
