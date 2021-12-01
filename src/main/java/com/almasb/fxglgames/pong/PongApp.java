@@ -59,8 +59,6 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A simple clone of Pong.
@@ -204,13 +202,13 @@ public class PongApp extends GameApplication {
                         var server = getNetService().newTCPServer(TCP_SERVER_PORT);
                         System.out.println(server.getClass());
                         
+                        // Checks if server port is already occupied by another host
                         if (!hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
                             throw new RuntimeException();
                         }
                     
                         server.setOnConnected(conn -> {
                             connection = conn;
-
 
                             //Setup the entities and other necessary items on the server.
                             getExecutor().startAsyncFX(() -> onServer());
@@ -244,9 +242,6 @@ public class PongApp extends GameApplication {
                 if (!reachable || hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
                     throw new RuntimeException("Server IP Address not found. Try Again!");
                 }
-//                if (!reachable) {  
-//                    throw new RuntimeException("Server IP Address not found. Try Again!");
-//                }
                 
                 //Setup the connection to the server.
                 var client = getNetService().newTCPClient(ipAddress, TCP_SERVER_PORT);
