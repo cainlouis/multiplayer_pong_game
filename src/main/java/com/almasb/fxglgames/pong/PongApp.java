@@ -55,6 +55,7 @@ import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.UnknownHostException;
 
 /**
@@ -64,6 +65,7 @@ import java.net.UnknownHostException;
  * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
  */
 public class PongApp extends GameApplication {
+    private final int TCP_SERVER_PORT = 7777;
     boolean isServer;
     private Connection<Bundle> connection;
 
@@ -194,10 +196,11 @@ public class PongApp extends GameApplication {
 
                 if (isServer) {
                     //Setup the TCP port that the server will listen at.
-                    var server = getNetService().newTCPServer(7777);
+                    var server = getNetService().newTCPServer(TCP_SERVER_PORT);
                     server.setOnConnected(conn -> {
                         connection = conn;
-
+                        
+                        
                         //Setup the entities and other necessary items on the server.
                         getExecutor().startAsyncFX(() -> onServer());
                     });
@@ -218,15 +221,18 @@ public class PongApp extends GameApplication {
             
             try {
                 InetAddress address = InetAddress.getByName(ipAddress);
-                boolean reachable = address.isReachable(5000);
-
-                System.out.println("Is host reachable? " + reachable);
-                if (!reachable) {
+                boolean reachable = address.isReachable(2000);
+                
+                // Checks if can connect to IP Address and checks if the port is free
+                if (!reachable || !hostAvailabilityCheck(ipAddress, TCP_SERVER_PORT)) {
                     throw new RuntimeException("Server IP Address not found. Try Again!");
                 }
+//                if (!reachable) {
+//                    throw new RuntimeException("Server IP Address not found. Try Again!");
+//                }
                 
                 //Setup the connection to the server.
-                var client = getNetService().newTCPClient(ipAddress, 7777);
+                var client = getNetService().newTCPClient(ipAddress, TCP_SERVER_PORT);
                 client.setOnConnected(conn -> {
                     connection = conn;
 
@@ -237,15 +243,29 @@ public class PongApp extends GameApplication {
                 //Establish the connection to the server.
                 client.connectAsync();
             } catch (RuntimeException e) {
-                getDialogService().showErrorBox("Server IP Address not found. Try Again!", () -> {
+                getDialogService().showErrorBox("Server IP Address is not currently hosting. Try Again!", () -> {
                     connectClient(); 
                 });
             } catch (IOException ex) {
-                getDialogService().showErrorBox("Unreacheable Host. Try Again!", () -> {
+                getDialogService().showErrorBox("Unreacheable Host/Invalid Input. Try Again!", () -> {
+                    connectClient(); 
+                });
+            } catch (Exception e) {
+                getDialogService().showErrorBox("An error has occurred. Try Again!", () -> {
                     connectClient(); 
                 });
             }
         });
+    }
+    public boolean hostAvailabilityCheck(String ipAddress, int port ) throws IOException { 
+        try {
+            Socket socket = new Socket(ipAddress, port);
+            socket.close();
+            return true;
+        } catch (IOException ex) {
+            //nothing
+        }
+        return false;
     }
     //Code to setup entities on other necessities on the server.
     private void onServer() {
