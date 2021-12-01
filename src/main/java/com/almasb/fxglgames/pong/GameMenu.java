@@ -16,9 +16,10 @@ public class GameMenu extends FXGLMenu {
         PongMenuButton resume = new PongMenuButton("Resume", () -> fireResume());
         PongMenuButton save = new PongMenuButton("Save", () -> fireSave());
         PongMenuButton load = new PongMenuButton("Load", () -> PongApp.loadLastGame());
+        PongMenuButton mainMenu = new PongMenuButton("Main Menu", () -> fireExitToMainMenu());
         PongMenuButton exit = new PongMenuButton("Exit Game", () -> fireExit());
 
-        VBox container = new VBox(resume, save, load, exit);
+        VBox container = new VBox(resume, save, load, mainMenu, exit);
         container.setTranslateX(100);
         container.setTranslateY(450);
 
