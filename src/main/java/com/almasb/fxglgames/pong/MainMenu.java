@@ -8,9 +8,12 @@ import javafx.beans.binding.StringBinding;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+
+import static com.almasb.fxgl.dsl.FXGLForKtKt.getUIFactoryService;
 
 /**
  * @author Almas Baimagambetov (almaslvl@gmail.com)
@@ -20,36 +23,18 @@ public class MainMenu extends FXGLMenu {
     public MainMenu() {
         super(MenuType.MAIN_MENU);
 
-        var button = new menuButton("Start new game", this::fireNewGame);
-        button.setTranslateX(FXGL.getAppWidth() / 2 - 200 / 2);
-        button.setTranslateY(FXGL.getAppHeight() / 2 - 40 / 2);
+        Text text = getUIFactoryService().newText("Pong Game", Color.DARKVIOLET, 60.0);
+        text.setTranslateX(FXGL.getAppWidth() / 2 - 250 / 2);
+        text.setTranslateY(FXGL.getAppHeight() / 2 - 300 / 2);
 
-        var exitButton = new menuButton("Exit", this::fireExit);
-        exitButton.setTranslateX(FXGL.getAppWidth() / 2 - 200 / 2);
-        exitButton.setTranslateY(FXGL.getAppHeight() / 2 + 50/ 2);
+        PongMenuButton newGame = new PongMenuButton("New Game", () -> fireNewGame());
+        PongMenuButton exit = new PongMenuButton("Quit", () -> fireExit());
 
-        getContentRoot().getChildren().addAll(button, exitButton);
+        VBox container = new VBox(newGame, exit);
+        container.setTranslateX(100);
+        container.setTranslateY(450);
+
+        getContentRoot().getChildren().addAll(text, container);
     }
 
-    private static class menuButton extends StackPane {
-        public menuButton(String name, Runnable action) {
-
-            var bg = new Rectangle(200, 40);
-            bg.setStroke(Color.WHITE);
-
-            var text = FXGL.getUIFactoryService().newText(name, Color.WHITE, 18);
-
-            bg.fillProperty().bind(
-                    Bindings.when(hoverProperty()).then(Color.DARKVIOLET).otherwise(Color.BLACK)
-            );
-
-            text.fillProperty().bind(
-                    Bindings.when(hoverProperty()).then(Color.BLACK).otherwise(Color.WHITE)
-            );
-
-            setOnMouseClicked(e -> action.run());
-
-            getChildren().addAll(bg, text);
-        }
-    }
 }
