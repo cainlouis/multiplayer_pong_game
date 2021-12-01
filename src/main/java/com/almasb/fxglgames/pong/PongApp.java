@@ -29,7 +29,6 @@ package com.almasb.fxglgames.pong;
 import com.almasb.fxgl.animation.Interpolators;
 import com.almasb.fxgl.app.GameApplication;
 import com.almasb.fxgl.app.GameSettings;
-import com.almasb.fxgl.app.MenuItem;
 import com.almasb.fxgl.core.math.FXGLMath;
 import com.almasb.fxgl.core.serialization.Bundle;
 import com.almasb.fxgl.entity.Entity;
@@ -47,9 +46,6 @@ import javafx.beans.property.IntegerProperty;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
-
-import java.io.Serializable;
-import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
@@ -70,10 +66,13 @@ public class PongApp extends GameApplication {
         settings.setVersion("1.0");
         settings.setFontUI("pong.ttf");
         settings.addEngineService(MultiplayerService.class); //Required for muliplayer service
-
+//
         settings.setMainMenuEnabled(true);
-        settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
+//        settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
+
+        settings.setSceneFactory(new PongMenuFactory());
     }
+
 
     private BatComponent playerBat1;
     private BatComponent playerBat2;
@@ -160,6 +159,13 @@ public class PongApp extends GameApplication {
                 set("player1score", player1score);
                 set("player2score", player2score);
             }
+        });
+    }
+
+    public static void loadLastGame() {
+        getDialogService().showInputBox("Which file do you wish to load?", answer -> {
+            //
+            getSaveLoadService().readAndLoadTask(answer).run();
         });
     }
 
