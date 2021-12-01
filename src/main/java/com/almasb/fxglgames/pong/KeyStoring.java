@@ -9,15 +9,15 @@ import java.security.cert.Certificate;
 
 public class KeyStoring {
     private KeyStore keyStore;
-    private String password;
+    private String hash;
     private static final String KEY_PAIR_ALIAS = "myPairKey";
     private static final String SECRET_KEY = "secretKey";
     private static final  String dir = "src/main/resources/keystore/keystore.p12";
     private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
 
-    public KeyStoring(String password) throws KeyStoreException {
-        this.password = password;
-        cmdArg[cmdArg.length-1] = password;
+    public KeyStoring(String hash) throws KeyStoreException {
+        this.hash = hash;
+        cmdArg[cmdArg.length-1] = hash;
         keyStore = KeyStore.getInstance("PKCS12");
     }
 
@@ -25,19 +25,7 @@ public class KeyStoring {
     public void createStoredKeys(){
         try {
             // Create the private and public key using keytool command.
-            ProcessBuilder processBuilder = new ProcessBuilder().command(cmdArg);
-            Process pro = processBuilder.start();
-            try (var reader = new BufferedReader(
-                    new InputStreamReader(pro.getInputStream()))) {
-
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
-
-
+            createPairKeys();
 
             //Create the secret key and store it in the keystore file
             saveSecretKey();
@@ -47,10 +35,24 @@ public class KeyStoring {
         }
     }
 
+    private void createPairKeys() throws IOException {
+        ProcessBuilder processBuilder = new ProcessBuilder().command(cmdArg);
+        Process pro = processBuilder.start();
+        try (var reader = new BufferedReader(
+                new InputStreamReader(pro.getInputStream()))) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        }
+    }
+
     private void LoadKey() throws Exception {
         //loads the p12 file and checks if the hash matches with the keystore's hash.
         FileInputStream fi = new FileInputStream(dir);
-        keyStore.load(fi, password.toCharArray());
+        keyStore.load(fi, hash.toCharArray());
 
         if(fi != null){
             fi.close();
@@ -63,14 +65,14 @@ public class KeyStoring {
         // Generating the secret key to store it in the loaded file.
         SecretKey sk = GenerateKey();
 
-        ProtectionParameter protParam = new PasswordProtection(password.toCharArray());
+        ProtectionParameter protParam = new PasswordProtection(hash.toCharArray());
         // creates a new entry in the p12 file with the secret key
         SecretKeyEntry skEntry = new SecretKeyEntry(sk);
         keyStore.setEntry(SECRET_KEY, skEntry, protParam);
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(dir);
-            keyStore.store(fos, password.toCharArray());
+            keyStore.store(fos, hash.toCharArray());
         } finally {
             if (fos != null) {
                 fos.close();
@@ -90,7 +92,7 @@ public class KeyStoring {
 
     public PrivateKey GetPrivateKey() throws Exception {
         LoadKey();
-        ProtectionParameter protParam = new PasswordProtection(password.toCharArray());
+        ProtectionParameter protParam = new PasswordProtection(hash.toCharArray());
         PrivateKeyEntry pkEntry = (PrivateKeyEntry) keyStore.getEntry(KEY_PAIR_ALIAS, protParam);
         PrivateKey myPrivateKey = pkEntry.getPrivateKey();
         return myPrivateKey;
@@ -105,7 +107,7 @@ public class KeyStoring {
 
     public SecretKey GetSecretKey() throws Exception {
         LoadKey();
-        ProtectionParameter protParam = new PasswordProtection(password.toCharArray());
+        ProtectionParameter protParam = new PasswordProtection(hash.toCharArray());
         SecretKeyEntry skEntry = (SecretKeyEntry) keyStore.getEntry(SECRET_KEY, protParam);
         SecretKey mySecretKey = skEntry.getSecretKey();
         return mySecretKey;
