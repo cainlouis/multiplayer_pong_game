@@ -63,6 +63,8 @@ public class KeyStoring {
         return key;
     }
 
+    /*Methods to get each key*/
+
     public PrivateKey GetPrivateKey() throws Exception {
         LoadKey();
         ProtectionParameter protParam = new PasswordProtection(password.toCharArray());
@@ -78,6 +80,12 @@ public class KeyStoring {
         return publicKey;
     }
 
-
+    public SecretKey GetSecretKey() throws Exception {
+        LoadKey();
+        ProtectionParameter protParam = new PasswordProtection(password.toCharArray());
+        SecretKeyEntry skEntry = (SecretKeyEntry) keyStore.getEntry(SECRET_KEY, protParam);
+        SecretKey mySecretKey = skEntry.getSecretKey();
+        return mySecretKey;
+    }
 
 }
