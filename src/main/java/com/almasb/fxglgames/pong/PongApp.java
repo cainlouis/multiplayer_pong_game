@@ -176,7 +176,6 @@ public class PongApp extends GameApplication {
 
     public static void loadLastGame() {
         getDialogService().showInputBox("Which file do you wish to load?", answer -> {
-            //
             getSaveLoadService().readAndLoadTask(answer).run();
         });
     }
@@ -246,7 +245,7 @@ public class PongApp extends GameApplication {
     }
     
     private void connectClient() {
-        getDialogService().showInputBox("Enter Server IP Address", answer -> {
+        getDialogService().showInputBox("Enter Server IP Address to connect as client", answer -> {
             ipAddress = answer;
             
             try {
@@ -289,27 +288,34 @@ public class PongApp extends GameApplication {
     }
     
     /**
-     * Checks if port on server is available 
+     * hostPortAvailabilityCheck() checks if port on selected ipAddress is available 
      * @param ipAddress
      * @param port
      * @return
      * @throws IOException 
      */
     public boolean hostPortAvailabilityCheck(String ipAddress, int port) throws IOException { 
-        try (Socket ss = new Socket(ipAddress, port)) {
+        try (Socket socket = new Socket(ipAddress, port)) {
             return true;
         } catch (IOException e) {
             return false;
         }
     }
     
+    /**
+     * hostServerPortAvailabilityCheck() checks if server's port is available
+     * @param port
+     * @return
+     * @throws IOException 
+     */
     public boolean hostServerPortAvailabilityCheck(int port) throws IOException { 
-        try (ServerSocket ss = new ServerSocket(port)) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
             return true;
         } catch (IOException e) {
             return false;
         }
     }
+    
     //Code to setup entities on other necessities on the server.
     private void onServer() {
         initServerInput();
