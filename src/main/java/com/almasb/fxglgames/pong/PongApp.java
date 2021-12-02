@@ -68,6 +68,7 @@ import java.net.UnknownHostException;
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
     boolean isServer;
+    boolean isPaused = false; 
     private Connection<Bundle> connection;
 
     @Override
@@ -76,7 +77,7 @@ public class PongApp extends GameApplication {
         settings.setVersion("1.0");
         settings.setFontUI("pong.ttf");
         settings.addEngineService(MultiplayerService.class); //Required for muliplayer service
-//
+
         settings.setMainMenuEnabled(true);
 //        settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
 
@@ -88,49 +89,6 @@ public class PongApp extends GameApplication {
     private BatComponent playerBat2;
     private Input clientInput;
     private String ipAddress;
-
-    protected void initServerInput() {
-        getInput().addAction(new UserAction("Up") {
-            @Override
-            protected void onAction() {
-                playerBat1.up();
-            }
-
-            @Override
-            protected void onActionEnd() {
-                playerBat1.stop();
-            }
-        }, KeyCode.W);
-
-        getInput().addAction(new UserAction("Down") {
-            @Override
-            protected void onAction() {
-                playerBat1.down();
-            }
-
-            @Override
-            protected void onActionEnd() {
-                playerBat1.stop();
-            }
-        }, KeyCode.S);
-
-        //Used for setting up input on the client
-        clientInput = new Input();
-
-        onKeyBuilder(clientInput, KeyCode.W)
-                .onAction(() -> {
-                    playerBat2.up();
-                }).onActionEnd(() -> {
-                    playerBat2.stop();
-                });
-
-        onKeyBuilder(clientInput, KeyCode.S)
-                .onAction(() -> {
-                    playerBat2.down();
-                }).onActionEnd(() -> {
-                    playerBat2.stop();
-                });
-    }
 
     @Override
     protected void initGameVars(Map<String, Object> vars) {
@@ -237,6 +195,69 @@ public class PongApp extends GameApplication {
                 }
             });
         }, Duration.seconds(0.5));
+    }
+    
+    protected void initServerInput() {
+        getInput().addAction(new UserAction("Up") {
+            @Override
+            protected void onAction() {
+                playerBat1.up();
+            }
+
+            @Override
+            protected void onActionEnd() {
+                playerBat1.stop();
+            }
+        }, KeyCode.W);
+
+        getInput().addAction(new UserAction("Down") {
+            @Override
+            protected void onAction() {
+                playerBat1.down();
+            }
+
+            @Override
+            protected void onActionEnd() {
+                playerBat1.stop();
+            }
+        }, KeyCode.S);
+
+//        getInput().addAction(new UserAction("Esc") {
+//            @Override
+//            protected void onAction() {
+//                
+//            }
+//        });
+        //Used for setting up input on the client
+        clientInput = new Input();
+
+        onKeyBuilder(clientInput, KeyCode.W)
+                .onAction(() -> {
+                    playerBat2.up();
+                }).onActionEnd(() -> {
+            playerBat2.stop();
+        });
+
+        onKeyBuilder(clientInput, KeyCode.S)
+                .onAction(() -> {
+                    playerBat2.down();
+                }).onActionEnd(() -> {
+            playerBat2.stop();
+        });
+
+        onKeyBuilder(clientInput, KeyCode.ESCAPE)
+                .onActionBegin(() -> {
+                    if (!isPaused) {
+                        System.out.println("Pause - isPaused: " + isPaused);
+                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
+                        isPaused = true;
+                    } else {
+                        System.out.println("Resume - isPaused: " + isPaused);
+                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                        isPaused = false;
+                    }
+                    clientInput.mockKeyRelease(KeyCode.ESCAPE);
+                });
     }
     
     private void connectClient() {
