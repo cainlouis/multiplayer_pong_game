@@ -6,19 +6,21 @@ import java.io.*;
 import java.security.*;
 import java.security.KeyStore.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 
 public class KeyStoring {
     private KeyStore keyStore;
     private String hash;
     private static final String KEY_PAIR_ALIAS = "myPairKey";
     private static final String SECRET_KEY = "secretKey";
+    private static final String ALGORITHM = "PKCS12";
     private static final  String dir = "src/main/resources/keystore/keystore.p12";
     private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
 
     public KeyStoring(String hash) throws KeyStoreException {
         this.hash = hash;
         cmdArg[cmdArg.length-1] = hash;
-        keyStore = KeyStore.getInstance("PKCS12");
+        keyStore = KeyStore.getInstance(ALGORITHM);
     }
 
     // Run just the first time when the file does not exist
@@ -30,11 +32,16 @@ public class KeyStoring {
             //Create the secret key and store it in the keystore file
             saveSecretKey();
 
+            // Might need clean the hash after the file is created.
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
+    /*
+    * This method creates a process builder to run they keytools command with all the parameters
+    * to create a private and a public keys
+    */
     private void createPairKeys() throws IOException {
         ProcessBuilder processBuilder = new ProcessBuilder().command(cmdArg);
         Process pro = processBuilder.start();
@@ -49,7 +56,11 @@ public class KeyStoring {
         }
     }
 
-    private void LoadKey() throws Exception {
+    /*
+    * This method checks if the keystore exists. If it exists it compares the provided
+    * hash with the stored hash in the keystore and if they match loads the keystore object
+    */
+    private void LoadKey(String hash) throws IOException, CertificateException, NoSuchAlgorithmException {
         //loads the p12 file and checks if the hash matches with the keystore's hash.
         FileInputStream fi = new FileInputStream(dir);
         keyStore.load(fi, hash.toCharArray());
@@ -59,9 +70,10 @@ public class KeyStoring {
         }
     }
 
+
     private void saveSecretKey() throws Exception {
         // Load the keystore saved in the keystore/keystore.p12
-        LoadKey();
+        LoadKey(hash);
         // Generating the secret key to store it in the loaded file.
         SecretKey sk = GenerateKey();
 
@@ -90,23 +102,23 @@ public class KeyStoring {
 
     /*Methods to get each key*/
 
-    public PrivateKey GetPrivateKey() throws Exception {
-        LoadKey();
+    public PrivateKey GetPrivateKey(String hash) throws Exception {
+        LoadKey(hash);
         ProtectionParameter protParam = new PasswordProtection(hash.toCharArray());
         PrivateKeyEntry pkEntry = (PrivateKeyEntry) keyStore.getEntry(KEY_PAIR_ALIAS, protParam);
         PrivateKey myPrivateKey = pkEntry.getPrivateKey();
         return myPrivateKey;
     }
 
-    public PublicKey GetPublicKey() throws Exception {
-        LoadKey();
+    public PublicKey GetPublicKey(String hash) throws Exception {
+        LoadKey(hash);
         Certificate certificate = keyStore.getCertificate(KEY_PAIR_ALIAS);
         PublicKey publicKey = certificate.getPublicKey();
         return publicKey;
     }
 
-    public SecretKey GetSecretKey() throws Exception {
-        LoadKey();
+    public SecretKey GetSecretKey(String hash) throws Exception {
+        LoadKey(hash);
         ProtectionParameter protParam = new PasswordProtection(hash.toCharArray());
         SecretKeyEntry skEntry = (SecretKeyEntry) keyStore.getEntry(SECRET_KEY, protParam);
         SecretKey mySecretKey = skEntry.getSecretKey();
