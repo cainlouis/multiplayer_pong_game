@@ -68,6 +68,8 @@ import java.net.UnknownHostException;
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
     boolean isServer;
+    boolean isHost;
+    boolean isClient;
     private Connection<Bundle> connection;
 
     @Override
@@ -207,24 +209,28 @@ public class PongApp extends GameApplication {
 
                 if (isServer) {
                     try {
-                        //Setup the TCP port that the server will listen at.
-                        var server = getNetService().newTCPServer(TCP_SERVER_PORT);
-                        System.out.println(server.getClass());
                         
                         // Checks if server port is already occupied by another host
-                        if (!hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
+                        if (!hostServerPortAvailabilityCheck(TCP_SERVER_PORT)) {
                             throw new RuntimeException();
                         }
-                    
+                        
+                        //Setup the TCP port that the server will listen at.
+                        var server = getNetService().newTCPServer(TCP_SERVER_PORT);
+
                         server.setOnConnected(conn -> {
                             connection = conn;
+                            
+                            if (!isHost) {
+                                getExecutor().startAsyncFX(() -> onServer());
+                                isHost = true;
+                            }
 
-                            //Setup the entities and other necessary items on the server.
-                            getExecutor().startAsyncFX(() -> onServer());
                         });
 
                         //Start listening on the specified TCP port.
                         server.startAsync();
+                        
                     }
                     catch (RuntimeException | IOException e) {
                         getDialogService().showErrorBox("Can't create new host! Server is already hosting.", () -> {
@@ -248,7 +254,7 @@ public class PongApp extends GameApplication {
                 boolean reachable = address.isReachable(2000);
                 
                 // Checks if can connect to IP Address and checks if the port is free
-                if (!reachable || hostPortAvailabilityCheck(TCP_SERVER_PORT)) {
+                if (!reachable || !hostPortAvailabilityCheck(ipAddress, TCP_SERVER_PORT)) {
                     throw new RuntimeException("Server IP Address not found. Try Again!");
                 }
                 
@@ -256,9 +262,12 @@ public class PongApp extends GameApplication {
                 var client = getNetService().newTCPClient(ipAddress, TCP_SERVER_PORT);
                 client.setOnConnected(conn -> {
                     connection = conn;
-
-                    //Enable the client to receive data from the server.
-                    getExecutor().startAsyncFX(() -> onClient());
+                    
+                    if (!isClient) {
+                        //Enable the client to receive data from the server.
+                        getExecutor().startAsyncFX(() -> onClient());
+                        isClient = true;
+                    }
                 });
 
                 //Establish the connection to the server.
@@ -281,11 +290,20 @@ public class PongApp extends GameApplication {
     
     /**
      * Checks if port on server is available 
+     * @param ipAddress
      * @param port
      * @return
      * @throws IOException 
      */
-    public boolean hostPortAvailabilityCheck(int port) throws IOException { 
+    public boolean hostPortAvailabilityCheck(String ipAddress, int port) throws IOException { 
+        try (Socket ss = new Socket(ipAddress, port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+    
+    public boolean hostServerPortAvailabilityCheck(int port) throws IOException { 
         try (ServerSocket ss = new ServerSocket(port)) {
             return true;
         } catch (IOException e) {
