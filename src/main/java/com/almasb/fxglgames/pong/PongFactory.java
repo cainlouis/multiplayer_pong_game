@@ -67,13 +67,13 @@ public class PongFactory implements EntityFactory {
         emitter.startColorProperty().bind(
                 Bindings.when(endGame)
                         .then(Color.RED)
-                        .otherwise(Color.GREEN)
+                        .otherwise(Color.WHITE)
         );
 
         emitter.endColorProperty().bind(
                 Bindings.when(endGame)
-                        .then(Color.RED)
-                        .otherwise(Color.GREEN)
+                        .then(Color.ORANGE)
+                        .otherwise(Color.LIGHTBLUE)
         );
 
         emitter.setBlendMode(BlendMode.SRC_OVER);
