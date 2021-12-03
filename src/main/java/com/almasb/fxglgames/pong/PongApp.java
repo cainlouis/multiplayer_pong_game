@@ -92,8 +92,12 @@ public class PongApp extends GameApplication {
 
     @Override
     protected void initGameVars(Map<String, Object> vars) {
+        //Player scores
         vars.put("player1score", 0);
         vars.put("player2score", 0);
+        
+        //Pause
+        vars.put("isPaused", isPaused);
     }
 
     @Override
@@ -103,7 +107,7 @@ public class PongApp extends GameApplication {
             public void onSave(DataFile data) {
                 // create a new bundle to store your data
                 var bundle = new Bundle("gameData");
-
+                
                 // store some data
                 IntegerProperty player1score = getip("player1score");
                 bundle.put("player1score", player1score.get());
@@ -154,7 +158,7 @@ public class PongApp extends GameApplication {
                         showGameOver("Player 2");
                     }
                 });
-
+                 
                 //this line is needed in order for entities to be spawned
                 getGameScene().setBackgroundColor(Color.rgb(0, 0, 5));
                 //Add background color to the game window.
@@ -180,7 +184,8 @@ public class PongApp extends GameApplication {
                             //Setup the entities and other necessary items on the server.
                             getExecutor().startAsyncFX(() -> onServer());
                         });
-
+                        
+                        
                         //Start listening on the specified TCP port.
                         server.startAsync();
                     }
@@ -228,6 +233,7 @@ public class PongApp extends GameApplication {
 //                
 //            }
 //        });
+
         //Used for setting up input on the client
         clientInput = new Input();
 
@@ -244,17 +250,26 @@ public class PongApp extends GameApplication {
                 }).onActionEnd(() -> {
             playerBat2.stop();
         });
-
+        
+        //var bundle = new Bundle("isPaused");
         onKeyBuilder(clientInput, KeyCode.ESCAPE)
                 .onActionBegin(() -> {
-                    if (!isPaused) {
-                        System.out.println("Pause - isPaused: " + isPaused);
+                    Boolean isPausedBoolean = Boolean.parseBoolean(getbp("isPaused").toString());
+                    System.out.println(isPausedBoolean);
+                    if (!isPausedBoolean) {
+                        System.out.println("reaches here");
                         getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
                         isPaused = true;
+                        set("isPaused", isPaused);
+                        isPausedBoolean = Boolean.parseBoolean(getbp("isPaused").toString());
+                        System.out.println("test: " + isPausedBoolean);
+
                     } else {
-                        System.out.println("Resume - isPaused: " + isPaused);
+                        System.out.println("reaches there");
                         getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
                         isPaused = false;
+                        set("isPaused", isPaused);
+
                     }
                     clientInput.mockKeyRelease(KeyCode.ESCAPE);
                 });

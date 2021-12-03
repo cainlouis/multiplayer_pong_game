@@ -13,7 +13,6 @@ public class PongMenuFactory extends SceneFactory {
     }
     @Override
     public FXGLMenu newGameMenu() {
-        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
         return new GameMenu();
     }
 }
