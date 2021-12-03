@@ -5,10 +5,12 @@ import java.security.*;
 
 public class SigningFile {
 
+    private static final String algorithm = "SHA256withECDSA";
+
     /**
      * Method for generating digital signature.
      */
-    public static byte[] generateSignature (String algorithm, PrivateKey privatekey, String message) throws NoSuchAlgorithmException, NoSuchProviderException,
+    public static byte[] generateSignature (PrivateKey privatekey, String message) throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, UnsupportedEncodingException, SignatureException, UnsupportedEncodingException {
 
         //Create an instance of the signature scheme for the given signature algorithm
@@ -28,7 +30,7 @@ public class SigningFile {
     /**
      * Method for verifying digital signature.
      */
-    public static boolean verifySignature(byte[] signature, PublicKey publickey, String algorithm, String message)
+    public static boolean verifySignature(byte[] signature, PublicKey publickey, String message)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, UnsupportedEncodingException, SignatureException {
 
