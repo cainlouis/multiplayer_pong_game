@@ -30,9 +30,10 @@ public class cryptoTest {
             System.out.println("wrong password");
         }
 
+        Encrypt.generateIV();
         //Encrypt file
-//        Encrypt.encryptFile(ks.GetSecretKey(hash), new File("src/main/resources/savedFiles/fileToEncrypt.txt"), new File("src/main/resources/savedFiles/fileEncrypted.txt"));
+        Encrypt.encryptFile(ks.GetSecretKey(hash), new File("src/main/resources/savedFiles/fileToEncrypt.txt"), new File("src/main/resources/savedFiles/fileEncrypted.txt"));
+        //Decrypt file fails
         Encrypt.decryptFile(ks.GetSecretKey(hash), new File("src/main/resources/savedFiles/fileEncrypted.txt"), new File("src/main/resources/savedFiles/fileDecrypted.txt"));
-
     }
 }
