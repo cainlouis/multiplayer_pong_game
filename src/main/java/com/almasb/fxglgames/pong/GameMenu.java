@@ -17,6 +17,7 @@ public class GameMenu extends FXGLMenu {
         
         PongMenuButton resume = new PongMenuButton("Resume", () -> {
             fireResume();
+            getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
         });
         PongMenuButton save = new PongMenuButton("Save", () -> fireSave());
         PongMenuButton load = new PongMenuButton("Load", () -> PongApp.loadLastGame());

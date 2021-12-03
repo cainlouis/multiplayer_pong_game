@@ -251,27 +251,26 @@ public class PongApp extends GameApplication {
             playerBat2.stop();
         });
         
-        //var bundle = new Bundle("isPaused");
+        var bundle = new Bundle("isPaused");
+        bundle.put("isPaused", isPaused);
+        //TO-DO: Fix syncing (interestingly enough it works as intended with other KeyCodes like P but not ESCAPE)
         onKeyBuilder(clientInput, KeyCode.ESCAPE)
                 .onActionBegin(() -> {
-                    Boolean isPausedBoolean = Boolean.parseBoolean(getbp("isPaused").toString());
+                    boolean isPausedBoolean = bundle.get("isPaused");
                     System.out.println(isPausedBoolean);
                     if (!isPausedBoolean) {
                         System.out.println("reaches here");
                         getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
-                        isPaused = true;
-                        set("isPaused", isPaused);
-                        isPausedBoolean = Boolean.parseBoolean(getbp("isPaused").toString());
-                        System.out.println("test: " + isPausedBoolean);
 
                     } else {
                         System.out.println("reaches there");
                         getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
-                        isPaused = false;
-                        set("isPaused", isPaused);
 
                     }
+                    System.out.println("reaches end");
+                    isPaused = !isPaused;
                     clientInput.mockKeyRelease(KeyCode.ESCAPE);
+                    bundle.put("isPaused", isPaused);
                 });
     }
     
