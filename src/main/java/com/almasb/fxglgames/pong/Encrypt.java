@@ -1,23 +1,32 @@
 package com.almasb.fxglgames.pong;
 
 import javax.crypto.*;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.*;
 
 public class Encrypt {
     private static final String algorithm = "AES/GCM/NoPadding";
+    private static final int GCM_IV_LENGTH = 12;
+    private static final int GCM_TAG_LENGTH = 16;
+
+
+
+    public Encrypt(){
+
+    }
 
     //Method to encrypt file using asymmetric key crypto
     public static void encryptFile(SecretKey secretKey, File inputFile, File outputFile)
             throws Exception{
 
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, readIV());
         //Initializes the Cipher
         Cipher encryptCipher = Cipher.getInstance(algorithm);
-        encryptCipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        encryptCipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmParameterSpec);
 
         FileOutputStream outputStream;
         //Create output stream
@@ -50,9 +59,10 @@ public class Encrypt {
     public static void decryptFile(SecretKey secretKey, File inputFile, File outputFile)
             throws Exception {
 
+        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, readIV());
         //Initializes the Cipher
         Cipher encryptCipher = Cipher.getInstance(algorithm);
-        encryptCipher.init(Cipher.DECRYPT_MODE, secretKey);
+        encryptCipher.init(Cipher.DECRYPT_MODE, secretKey, gcmParameterSpec);
 
         FileOutputStream outputStream;
         //Create output stream
@@ -78,6 +88,17 @@ public class Encrypt {
             //Close the input and output streams
         }
         outputStream.close();
+    }
+
+    public static void generateIV() throws IOException {
+        byte[] IV = new byte[GCM_IV_LENGTH];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(IV);
+        Files.write(Paths.get("src", "main", "resources","keystore","IV.dat") , IV);
+    }
+
+    public static byte[] readIV() throws IOException {
+         return Files.readAllBytes(Paths.get("src", "main", "resources","keystore","IV.dat"));
     }
 
 
