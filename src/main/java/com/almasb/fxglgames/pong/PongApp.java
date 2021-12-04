@@ -70,6 +70,7 @@ public class PongApp extends GameApplication {
     boolean isServer;
     boolean isPaused = false; 
     private Connection<Bundle> connection;
+    private Bundle bundle = new Bundle("isPaused");
 
     @Override
     protected void initSettings(GameSettings settings) {
@@ -180,7 +181,13 @@ public class PongApp extends GameApplication {
                     
                         server.setOnConnected(conn -> {
                             connection = conn;
-
+                            connection.addMessageHandler((connect, message) -> {
+                                if (message.exists("isPaused")) {
+                                    if (message.get("isPaused")) {
+                                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                                    }
+                                }
+                            });
                             //Setup the entities and other necessary items on the server.
                             getExecutor().startAsyncFX(() -> onServer());
                         });
@@ -251,26 +258,14 @@ public class PongApp extends GameApplication {
             playerBat2.stop();
         });
         
-        var bundle = new Bundle("isPaused");
-        bundle.put("isPaused", isPaused);
+        //bundle.put("isPaused", isPaused);
         //TO-DO: Fix syncing (interestingly enough it works as intended with other KeyCodes like P but not ESCAPE)
         onKeyBuilder(clientInput, KeyCode.ESCAPE)
                 .onActionBegin(() -> {
-                    boolean isPausedBoolean = bundle.get("isPaused");
-                    System.out.println(isPausedBoolean);
-                    if (!isPausedBoolean) {
-                        System.out.println("reaches here");
-                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
-
-                    } else {
-                        System.out.println("reaches there");
-                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
-
-                    }
-                    System.out.println("reaches end");
-                    isPaused = !isPaused;
-                    clientInput.mockKeyRelease(KeyCode.ESCAPE);
-                    bundle.put("isPaused", isPaused);
+                    System.out.println("reaches here");
+                    isPaused = true;
+                    bundle.put("isPaused", true);
+                    getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
                 });
     }
     
@@ -422,6 +417,10 @@ public class PongApp extends GameApplication {
     protected void onUpdate(double tpf) {
         if (isServer && clientInput != null) {
             clientInput.update(tpf);
+        }
+        if (isPaused) {
+            isPaused = false;
+            bundle.put("isPaused", false);
         }
     }
 
