@@ -174,18 +174,8 @@ public class PongApp extends GameApplication {
 
                         server.setOnConnected(conn -> {
                             connection = conn;
-                            connection.addMessageHandler((connect, message) -> {
-                                System.out.println("at message exists: " + message.exists("isPaused"));
-                                if (message.exists("isPaused")) {
-                                    System.out.println("at message get " + message.get("isPaused"));
-                                    if (message.get("isPaused")) {
-                                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
-                                    }
-                                    else {
-                                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
-                                    }
-                                }
-                            });
+                            setConnectionListener();
+                            
                             //Setup the entities and other necessary items on the server                           
                             if (!isHost) {
                                 getExecutor().startAsyncFX(() -> onServer());
@@ -226,19 +216,7 @@ public class PongApp extends GameApplication {
                 client.setOnConnected(conn -> {
                     connection = conn;
                     
-                    //Listens for any 
-                    connection.addMessageHandler((connect, message) -> {
-                                System.out.println("at message exists: " + message.exists("isPaused"));
-                                if (message.exists("isPaused")) {
-                                    System.out.println("at message get " + message.get("isPaused"));
-                                    if (message.get("isPaused")) {
-                                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
-                                    }
-                                    else {
-                                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
-                                    }
-                                }
-                            });
+                    setConnectionListener();
                     
                     //Enable the client to receive data from the server.              
                     if (!isClient) {
@@ -266,6 +244,23 @@ public class PongApp extends GameApplication {
     }
     
     /**
+     * setConnectionListner() sets up a listener to receive any message sent by either server or client. 
+     * Pauses or resumes game accordingly.
+     */
+    private void setConnectionListener() {
+        // Sets up a listener to receive any message sent by either server or client. Pauses or resumes game accordingly
+        connection.addMessageHandler((connect, message) -> {
+            if (message.exists("isPaused")) {
+                if (message.get("isPaused")) {
+                    getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
+                } else {
+                    getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                }
+            }
+        });
+    }
+    
+    /**w
      * hostPortAvailabilityCheck() checks if port on selected ipAddress is available 
      * @param ipAddress
      * @param port
