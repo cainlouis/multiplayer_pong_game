@@ -449,7 +449,6 @@ public class PongApp extends GameApplication {
             var bundle = new Bundle("isPaused");
             isPaused = false;
             bundle.put("isPaused", false);
-            System.out.println("reaches update: " + bundle.get("isPaused") + " - " + bundle.get("isPaused").getClass());
             connection.send(bundle);
         }
         
