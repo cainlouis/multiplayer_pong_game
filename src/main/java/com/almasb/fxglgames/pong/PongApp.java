@@ -51,6 +51,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.io.File;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -83,6 +85,9 @@ public class PongApp extends GameApplication {
     boolean isClient;
     private Connection<Bundle> connection;
     boolean pass;
+    private static KeyStoring ks;
+    private static byte[] hash;
+    private final static String savedFileName = "savedFile.sav";
 
     @Override
     protected void initSettings(GameSettings settings) {
@@ -186,10 +191,30 @@ public class PongApp extends GameApplication {
         });
     }
 
-    public static void loadLastGame() {
-        getDialogService().showInputBox("Which file do you wish to load?", answer -> {
-            getSaveLoadService().readAndLoadTask(answer).run();
-        });
+    public static void loadLastGame() throws Exception {
+        /*
+         * decrypt file and generate a savedFile.sav
+         */
+        File encryptedFile= new File(String.valueOf(Paths.get("src","main","resources", "savedFiles","encryptedFile")));
+        File savedFile =  new File(savedFileName);
+        Encrypt.decryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)), encryptedFile, savedFile);
+        getSaveLoadService().readAndLoadTask(savedFileName).run();
+        savedFile.delete();
+
+        getDialogService().showMessageBox("Game loaded!");
+    }
+
+    public static void saveLastGame() throws Exception {
+        getSaveLoadService().saveAndWriteTask(savedFileName).run();
+        /*
+         * generates savedFileName, encrypts it and delete the saved file.
+         */
+        File savedFile =  new File(savedFileName);
+        File encryptedFile= new File(String.valueOf(Paths.get("src","main","resources", "savedFiles","encryptedFile")));
+        Encrypt.encryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)),savedFile, encryptedFile);
+        savedFile.delete();
+
+        getDialogService().showMessageBox("Game saved!");
     }
 
     @Override
@@ -439,11 +464,12 @@ public class PongApp extends GameApplication {
         // Create the custom dialog.
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Login Dialog");
-        dialog.setHeaderText("Password input");
+        dialog.setHeaderText("Enter the password to log the keys.\nIf you do not have the keys, provide a new password to create them.");
 
         // Set the button types.
         ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+//        ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType);
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -466,12 +492,13 @@ public class PongApp extends GameApplication {
 
         // reading the password from the user
         String pass = password.getText();
-        System.out.println(pass);
 
-        byte[] hash = HashingSHA3.computeHash(pass);
+        //hashing the password
+        hash = HashingSHA3.computeHash(pass);
         System.out.println(HashingSHA3.bytesToHex(hash));
 
-        KeyStoring ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
+        // creating a keystore object with the hash provided.
+        ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
 
         //checks if the p12 file exists, if it does not, it creates a new one or tries to load the key
         if (Files.notExists(Paths.get("src", "main", "resources", "keystore", "keystore.p12"))) {
