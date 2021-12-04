@@ -273,7 +273,12 @@ public class PongApp extends GameApplication {
 //                    connection.send(bundle);
 //                    clientInput.mockKeyRelease(KeyCode.ESCAPE);
 //                });
-    
+        onKeyDown(KeyCode.ESCAPE, "Pause Game", () -> {
+            isPaused = true;
+            var bundle = new Bundle("isPaused");
+            bundle.put("isPaused", true);
+            connection.send(bundle);
+        });
     }
     
     private void connectClient() {
@@ -293,7 +298,18 @@ public class PongApp extends GameApplication {
                 var client = getNetService().newTCPClient(ipAddress, TCP_SERVER_PORT);
                 client.setOnConnected(conn -> {
                     connection = conn;
-
+                    connection.addMessageHandler((connect, message) -> {
+                                System.out.println("at message exists: " + message.exists("isPaused"));
+                                if (message.exists("isPaused")) {
+                                    System.out.println("at message get " + message.get("isPaused"));
+                                    if (message.get("isPaused")) {
+                                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
+                                    }
+                                    else {
+                                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                                    }
+                                }
+                            });
                     //Enable the client to receive data from the server.
                     getExecutor().startAsyncFX(() -> onClient());
                 });
@@ -351,13 +367,14 @@ public class PongApp extends GameApplication {
 
     //Code to setup the client
     private void onClient() {
-        //onClient handles ESC button
+        //onClient handles ESC button (onKeyBuilder doesn't work so use onKeyDown instead)
         onKeyDown(KeyCode.ESCAPE, "Pause Game", () -> {
             isPaused = true;
             var bundle = new Bundle("isPaused");
             bundle.put("isPaused", true);
             connection.send(bundle);
         });
+        
         getService(MultiplayerService.class).addEntityReplicationReceiver(connection, getGameWorld());
         getService(MultiplayerService.class).addPropertyReplicationReceiver(connection, getWorldProperties());
         getService(MultiplayerService.class).addInputReplicationSender(connection, getInput());
