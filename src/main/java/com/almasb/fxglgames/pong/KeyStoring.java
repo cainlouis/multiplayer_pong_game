@@ -60,7 +60,7 @@ public class KeyStoring {
     * This method checks if the keystore exists. If it exists it compares the provided
     * hash with the stored hash in the keystore and if they match loads the keystore object
     */
-    private void LoadKey(String hash) throws IOException, CertificateException, NoSuchAlgorithmException {
+    public void LoadKey(String hash) throws IOException, CertificateException, NoSuchAlgorithmException {
         //loads the p12 file and checks if the hash matches with the keystore's hash.
         FileInputStream fi = new FileInputStream(dir);
         keyStore.load(fi, hash.toCharArray());
