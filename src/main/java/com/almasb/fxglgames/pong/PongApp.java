@@ -42,22 +42,33 @@ import com.almasb.fxgl.physics.HitBox;
 import com.almasb.fxgl.profile.DataFile;
 import com.almasb.fxgl.profile.SaveLoadHandler;
 import com.almasb.fxgl.ui.UI;
+import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.net.InetAddress;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
+
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Optional;
 
 /**
  * A simple clone of Pong.
@@ -71,6 +82,7 @@ public class PongApp extends GameApplication {
     boolean isHost;
     boolean isClient;
     private Connection<Bundle> connection;
+    boolean pass;
 
     @Override
     protected void initSettings(GameSettings settings) {
@@ -185,7 +197,7 @@ public class PongApp extends GameApplication {
         runOnce(() -> {
             getDialogService().showConfirmationBox("Are you the host?", yes -> {
                 isServer = yes;
-                
+
                 getWorldProperties().<Integer>addListener("player1score", (old, newScore) -> {
                     if (newScore == 11) {
                         showGameOver("Player 1");
@@ -207,19 +219,26 @@ public class PongApp extends GameApplication {
 
 
                 if (isServer) {
+                    do {
+                        try {
+                            pass = loginDialog();
+                        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+                            e.printStackTrace();
+                        }
+                    } while (!pass);
                     try {
-                        
+
                         // Checks if server port is already occupied by another host
                         if (!hostServerPortAvailabilityCheck(TCP_SERVER_PORT)) {
                             throw new RuntimeException();
                         }
-                        
+
                         //Setup the TCP port that the server will listen at.
                         var server = getNetService().newTCPServer(TCP_SERVER_PORT);
 
                         server.setOnConnected(conn -> {
                             connection = conn;
-                            
+
                             if (!isHost) {
                                 getExecutor().startAsyncFX(() -> onServer());
                                 isHost = true;
@@ -229,39 +248,37 @@ public class PongApp extends GameApplication {
 
                         //Start listening on the specified TCP port.
                         server.startAsync();
-                        
-                    }
-                    catch (RuntimeException | IOException e) {
+
+                    } catch (RuntimeException | IOException e) {
                         getDialogService().showErrorBox("Can't create new host! Server is already hosting.", () -> {
                             connectClient();
                         });
                     }
-
                 } else {
                     connectClient();
                 }
             });
         }, Duration.seconds(0.5));
     }
-    
+
     private void connectClient() {
         getDialogService().showInputBox("Enter Server IP Address to connect as client", answer -> {
             ipAddress = answer;
-            
+
             try {
                 InetAddress address = InetAddress.getByName(ipAddress);
                 boolean reachable = address.isReachable(2000);
-                
+
                 // Checks if can connect to IP Address and checks if the port is free
                 if (!reachable || !hostPortAvailabilityCheck(ipAddress, TCP_SERVER_PORT)) {
                     throw new RuntimeException("Server IP Address not found. Try Again!");
                 }
-                
+
                 //Setup the connection to the server.
                 var client = getNetService().newTCPClient(ipAddress, TCP_SERVER_PORT);
                 client.setOnConnected(conn -> {
                     connection = conn;
-                    
+
                     if (!isClient) {
                         //Enable the client to receive data from the server.
                         getExecutor().startAsyncFX(() -> onClient());
@@ -273,56 +290,59 @@ public class PongApp extends GameApplication {
                 client.connectAsync();
             } catch (RuntimeException e) {
                 getDialogService().showErrorBox("Server IP Address is not currently hosting. Try Again!", () -> {
-                    connectClient(); 
+                    connectClient();
                 });
             } catch (IOException ex) {
                 getDialogService().showErrorBox("Unreacheable Host/Invalid Input. Try Again!", () -> {
-                    connectClient(); 
+                    connectClient();
                 });
             } catch (Exception e) {
                 getDialogService().showErrorBox("An error has occurred. Try Again!", () -> {
-                    connectClient(); 
+                    connectClient();
                 });
             }
         });
     }
-    
+
     /**
-     * hostPortAvailabilityCheck() checks if port on selected ipAddress is available 
+     * hostPortAvailabilityCheck() checks if port on selected ipAddress is available
+     *
      * @param ipAddress
      * @param port
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
-    public boolean hostPortAvailabilityCheck(String ipAddress, int port) throws IOException { 
+    public boolean hostPortAvailabilityCheck(String ipAddress, int port) throws IOException {
         try (Socket socket = new Socket(ipAddress, port)) {
             return true;
         } catch (IOException e) {
             return false;
         }
     }
-    
+
     /**
      * hostServerPortAvailabilityCheck() checks if server's port is available
+     *
      * @param port
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
-    public boolean hostServerPortAvailabilityCheck(int port) throws IOException { 
+    public boolean hostServerPortAvailabilityCheck(int port) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             return true;
         } catch (IOException e) {
             return false;
         }
     }
-    
+
     //Code to setup entities on other necessities on the server.
     private void onServer() {
         initServerInput();
         initServerPhysics();
-        
+
         //Spawn the player for the server
-        Entity ball = spawn("ball", new SpawnData(getAppWidth() / 2 - 5, getAppHeight() / 2 - 5).put("exists", true));;
+        Entity ball = spawn("ball", new SpawnData(getAppWidth() / 2 - 5, getAppHeight() / 2 - 5).put("exists", true));
+        ;
         getService(MultiplayerService.class).spawn(connection, ball, "ball");
         Entity bat1 = spawn("bat", new SpawnData(getAppWidth() / 4, getAppHeight() / 2 - 30).put("exists", true));
         getService(MultiplayerService.class).spawn(connection, bat1, "bat");
@@ -414,6 +434,62 @@ public class PongApp extends GameApplication {
         }
     }
 
+    protected boolean loginDialog() throws NoSuchAlgorithmException, KeyStoreException {
+        boolean isPassword = false;
+        // Create the custom dialog.
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Login Dialog");
+        dialog.setHeaderText("Password input");
+
+        // Set the button types.
+        ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        // Create the password label and field.
+        PasswordField password = new PasswordField();
+        password.setPromptText("Password");
+
+        grid.add(new Label("Password:"), 0, 0);
+        grid.add(password, 1, 0);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the username field by default.
+        Platform.runLater(() -> password.requestFocus());
+
+        Optional<String> result = dialog.showAndWait();
+
+        // reading the password from the user
+        String pass = password.getText();
+        System.out.println(pass);
+
+        byte[] hash = HashingSHA3.computeHash(pass);
+        System.out.println(HashingSHA3.bytesToHex(hash));
+
+        KeyStoring ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
+
+        //checks if the p12 file exists, if it does not, it creates a new one or tries to load the key
+        if (Files.notExists(Paths.get("src", "main", "resources", "keystore", "keystore.p12"))) {
+            System.out.println("keys created");
+            isPassword = true;
+            ks.createStoredKeys();
+        }
+        try {
+            ks.LoadKey(HashingSHA3.bytesToHex(hash));
+            isPassword = true;
+            System.out.println("keys already created, password correct");
+        } catch (CertificateException e) {
+            System.out.println("Certificate");
+        } catch (IOException e) {
+            System.out.println("Wrong Password");
+        }
+        return isPassword;
+    }
 
     public static void main(String[] args) {
         launch(args);
