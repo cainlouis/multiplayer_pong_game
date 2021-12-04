@@ -68,7 +68,7 @@ import java.net.UnknownHostException;
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
     boolean isServer;
-    boolean isPaused = false; 
+    boolean isPaused; 
     private Connection<Bundle> connection;
     private Bundle bundle = new Bundle("isPaused");
 
@@ -98,7 +98,7 @@ public class PongApp extends GameApplication {
         vars.put("player2score", 0);
         
         //Pause
-        vars.put("isPaused", isPaused);
+        //vars.put("isPaused", isPaused);
     }
 
     @Override
@@ -182,9 +182,14 @@ public class PongApp extends GameApplication {
                         server.setOnConnected(conn -> {
                             connection = conn;
                             connection.addMessageHandler((connect, message) -> {
+                                System.out.println("at message exists: " + message.exists("isPaused"));
                                 if (message.exists("isPaused")) {
+                                    System.out.println("at message get");
                                     if (message.get("isPaused")) {
                                         getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                                    }
+                                    else {
+                                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
                                     }
                                 }
                             });
@@ -262,10 +267,11 @@ public class PongApp extends GameApplication {
         //TO-DO: Fix syncing (interestingly enough it works as intended with other KeyCodes like P but not ESCAPE)
         onKeyBuilder(clientInput, KeyCode.ESCAPE)
                 .onActionBegin(() -> {
-                    System.out.println("reaches here");
                     isPaused = true;
                     bundle.put("isPaused", true);
-                    getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
+                    System.out.println("reaches here: " + bundle.get("isPaused"));
+                    connection.send(bundle);
+                    clientInput.mockKeyRelease(KeyCode.ESCAPE);
                 });
     }
     
@@ -415,12 +421,14 @@ public class PongApp extends GameApplication {
     //This method is needed in order to move the client player.
     @Override
     protected void onUpdate(double tpf) {
-        if (isServer && clientInput != null) {
-            clientInput.update(tpf);
-        }
         if (isPaused) {
             isPaused = false;
             bundle.put("isPaused", false);
+            System.out.println("reaches update: " + bundle.get("isPaused"));
+            connection.send(bundle);
+        }
+        if (isServer && clientInput != null) {
+            clientInput.update(tpf);
         }
     }
 
