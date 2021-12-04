@@ -29,5 +29,4 @@ public class GameMenu extends FXGLMenu {
 
         getContentRoot().getChildren().add(container);
     }
-
 }
