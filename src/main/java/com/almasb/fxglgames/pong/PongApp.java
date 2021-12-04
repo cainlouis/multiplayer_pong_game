@@ -70,7 +70,6 @@ public class PongApp extends GameApplication {
     boolean isServer;
     boolean isPaused; 
     private Connection<Bundle> connection;
-    private Bundle bundle = new Bundle("isPaused");
 
     @Override
     protected void initSettings(GameSettings settings) {
@@ -184,12 +183,12 @@ public class PongApp extends GameApplication {
                             connection.addMessageHandler((connect, message) -> {
                                 System.out.println("at message exists: " + message.exists("isPaused"));
                                 if (message.exists("isPaused")) {
-                                    System.out.println("at message get");
+                                    System.out.println("at message get " + message.get("isPaused"));
                                     if (message.get("isPaused")) {
-                                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
                                     }
                                     else {
-                                        getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
+                                        getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
                                     }
                                 }
                             });
@@ -265,14 +264,16 @@ public class PongApp extends GameApplication {
         
         //bundle.put("isPaused", isPaused);
         //TO-DO: Fix syncing (interestingly enough it works as intended with other KeyCodes like P but not ESCAPE)
-        onKeyBuilder(clientInput, KeyCode.ESCAPE)
-                .onActionBegin(() -> {
-                    isPaused = true;
-                    bundle.put("isPaused", true);
-                    System.out.println("reaches here: " + bundle.get("isPaused"));
-                    connection.send(bundle);
-                    clientInput.mockKeyRelease(KeyCode.ESCAPE);
-                });
+//        onKeyBuilder(clientInput, KeyCode.ESCAPE)
+//                .onActionBegin(() -> {
+//                    var bundle = new Bundle("isPaused");
+//                    isPaused = true;
+//                    bundle.put("isPaused", true);
+//                    System.out.println("reaches here: " + bundle.get("isPaused"));
+//                    connection.send(bundle);
+//                    clientInput.mockKeyRelease(KeyCode.ESCAPE);
+//                });
+    
     }
     
     private void connectClient() {
@@ -350,6 +351,13 @@ public class PongApp extends GameApplication {
 
     //Code to setup the client
     private void onClient() {
+        //onClient handles ESC button
+        onKeyDown(KeyCode.ESCAPE, "Pause Game", () -> {
+            isPaused = true;
+            var bundle = new Bundle("isPaused");
+            bundle.put("isPaused", true);
+            connection.send(bundle);
+        });
         getService(MultiplayerService.class).addEntityReplicationReceiver(connection, getGameWorld());
         getService(MultiplayerService.class).addPropertyReplicationReceiver(connection, getWorldProperties());
         getService(MultiplayerService.class).addInputReplicationSender(connection, getInput());
@@ -422,9 +430,10 @@ public class PongApp extends GameApplication {
     @Override
     protected void onUpdate(double tpf) {
         if (isPaused) {
+            var bundle = new Bundle("isPaused");
             isPaused = false;
             bundle.put("isPaused", false);
-            System.out.println("reaches update: " + bundle.get("isPaused"));
+            System.out.println("reaches update: " + bundle.get("isPaused") + " - " + bundle.get("isPaused").getClass());
             connection.send(bundle);
         }
         if (isServer && clientInput != null) {
