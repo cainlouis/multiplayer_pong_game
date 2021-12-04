@@ -5,6 +5,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
 
@@ -12,16 +13,16 @@ public class Encrypt {
     private static final String algorithm = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 16;
+    private static final Path IVPath = Paths.get("src", "main", "resources","keystore","IV.dat");
 
-
-
-    public Encrypt(){
-
-    }
 
     //Method to encrypt file using asymmetric key crypto
     public static void encryptFile(SecretKey secretKey, File inputFile, File outputFile)
             throws Exception{
+
+         if(Files.notExists(IVPath)){
+             generateIV();
+         }
 
         GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, readIV());
         //Initializes the Cipher
@@ -90,15 +91,15 @@ public class Encrypt {
         outputStream.close();
     }
 
-    public static void generateIV() throws IOException {
+    private static void generateIV() throws IOException {
         byte[] IV = new byte[GCM_IV_LENGTH];
         SecureRandom random = new SecureRandom();
         random.nextBytes(IV);
-        Files.write(Paths.get("src", "main", "resources","keystore","IV.dat") , IV);
+        Files.write(IVPath, IV);
     }
 
-    public static byte[] readIV() throws IOException {
-         return Files.readAllBytes(Paths.get("src", "main", "resources","keystore","IV.dat"));
+    private static byte[] readIV() throws IOException {
+         return Files.readAllBytes(IVPath);
     }
 
 
