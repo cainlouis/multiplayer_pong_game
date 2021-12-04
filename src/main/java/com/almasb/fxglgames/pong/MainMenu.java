@@ -70,19 +70,7 @@ public class MainMenu extends FXGLMenu {
         // Request focus on the username field by default.
         Platform.runLater(() -> password.requestFocus());
 
-        //Get the password from the dialog box
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == loginButtonType) {
-                return password.getText();
-            }
-            return null;
-        });
-
-        //This get the password with Optional
         Optional<String> result = dialog.showAndWait();
-        int lastIndex = result.toString().indexOf("]");
-        int firstIndex = result.toString().indexOf("[") + 1;
-        String inputPass = result.toString().substring(firstIndex, lastIndex);
 
         //Uncomment if password is right
         //fireNewGame();
