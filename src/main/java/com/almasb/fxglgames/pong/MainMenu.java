@@ -17,6 +17,12 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import kotlin.Pair;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Optional;
 
 import static com.almasb.fxgl.dsl.FXGLForKtKt.getUIFactoryService;
@@ -33,7 +39,13 @@ public class MainMenu extends FXGLMenu {
         text.setTranslateX(FXGL.getAppWidth() / 2 - 250 / 2);
         text.setTranslateY(FXGL.getAppHeight() / 2 - 300 / 2);
 
-        PongMenuButton newGame = new PongMenuButton("New Game", () -> loginDialog());
+        PongMenuButton newGame = new PongMenuButton("New Game", () -> {
+            try {
+                loginDialog();
+            } catch (NoSuchAlgorithmException | KeyStoreException e) {
+                e.printStackTrace();
+            }
+        });
         PongMenuButton exit = new PongMenuButton("Quit", () -> fireExit());
 
         VBox container = new VBox(newGame, exit);
@@ -43,7 +55,7 @@ public class MainMenu extends FXGLMenu {
         getContentRoot().getChildren().addAll(text, container);
     }
 
-    protected void loginDialog() {
+    protected void loginDialog() throws NoSuchAlgorithmException, KeyStoreException {
         // Create the custom dialog.
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Login Dialog");
@@ -71,6 +83,31 @@ public class MainMenu extends FXGLMenu {
         Platform.runLater(() -> password.requestFocus());
 
         Optional<String> result = dialog.showAndWait();
+
+        // reading the password from the user
+        String pass = password.getText();
+        System.out.println(pass);
+
+        byte [] hash = HashingSHA3.computeHash(pass);
+        System.out.println(HashingSHA3.bytesToHex(hash));
+
+        KeyStoring ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
+
+        //checks if the p12 file exists, if it does not, it creates a new one or tries to load the key
+        if (Files.notExists(Paths.get("src", "main", "resources", "keystore", "keystore.p12"))){
+            System.out.println("keys created");
+            ks.createStoredKeys();
+            fireNewGame();
+        }
+        try {
+            ks.LoadKey(HashingSHA3.bytesToHex(hash));
+            System.out.println("keys already created, password correct");
+            fireNewGame();
+        } catch (CertificateException e) {
+            System.out.println("Certificate");
+        } catch (IOException e) {
+            System.out.println("Wrong Password");
+        }
 
         //Uncomment if password is right
         //fireNewGame();
