@@ -91,7 +91,7 @@ public class PongApp extends GameApplication {
     private static byte[] hash;
     private final static String savedFileName = "savedFile.sav";
     private final static Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
-
+    private final static Path pongSignatureFile = Paths.get("src", "main", "resources", "PongApp.sig");
     private BatComponent playerBat1, playerBat2;
     private Input clientInput;
     private String ipAddress;
