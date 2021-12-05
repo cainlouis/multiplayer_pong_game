@@ -43,15 +43,9 @@ public class MainMenu extends FXGLMenu {
         //Create the button for the main menu and their action
         PongMenuButton newGame = new PongMenuButton("New Game", () -> fireNewGame()); //Create a new instance of the game
         PongMenuButton exit = new PongMenuButton("Quit", () -> fireExit()); //Exit the application
-        PongMenuButton load = new PongMenuButton("Load Game", () -> {
-            try {
-            PongApp.loadLastGame();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }}); //Allow the user to load a previous game
 
         //Create a vbox that acts like a container for the buttons and set the position to the lower left corner
-        VBox container = new VBox(newGame, load, exit);
+        VBox container = new VBox(newGame, exit);
         container.setTranslateX(100);
         container.setTranslateY(450);
 
