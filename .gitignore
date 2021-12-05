@@ -37,7 +37,7 @@ system/
 *.iws
 /src/main/resources/keystore/*
 /src/main/resources/savedFiles/*
-/src/main
+/src/main/resources/PongApp.sig
 
 ##############################
 ## NetBeans
