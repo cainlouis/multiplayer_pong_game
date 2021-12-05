@@ -20,13 +20,13 @@ public class PongMenuButton extends StackPane {
         this.name = name;
         this.action = action;
 
-        text = getUIFactoryService().newText(name, Color.BLACK, 20.0);
-        shape = new Circle(4, Color.BLACK);
+        text = getUIFactoryService().newText(name, Color.LIGHTBLUE, 20.0);
+        shape = new Circle(4, Color.LIGHTBLUE);
         shape.setTranslateX(-20);
         shape.setTranslateY(-2);
         shape.visibleProperty().bind(focusedProperty());
 
-        text.fillProperty().bind(Bindings.when(focusedProperty()).then(Color.BLACK).otherwise(Color.GRAY));
+        text.fillProperty().bind(Bindings.when(focusedProperty()).then(Color.LIGHTBLUE).otherwise(Color.GRAY));
         setAlignment(Pos.CENTER_LEFT);
         setFocusTraversable(true);
 
