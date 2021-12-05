@@ -52,8 +52,6 @@ import static com.almasb.fxgl.dsl.FXGL.getip;
  * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
  */
 public class PongFactory implements EntityFactory {
-
-
     @Spawns("ball")
     public Entity newBall(SpawnData data) {
         PhysicsComponent physics = new PhysicsComponent();

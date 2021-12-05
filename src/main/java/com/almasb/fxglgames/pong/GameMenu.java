@@ -1,6 +1,5 @@
 package com.almasb.fxglgames.pong;
 
-
 import com.almasb.fxgl.app.scene.FXGLMenu;
 import com.almasb.fxgl.app.scene.MenuType;
 import javafx.scene.layout.VBox;

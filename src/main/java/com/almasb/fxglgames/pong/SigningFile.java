@@ -12,18 +12,24 @@ import static com.almasb.fxgl.dsl.FXGL.getDialogService;
 
 public class SigningFile {
 
-    private static final String algorithm = "SHA256withECDSA";
+    private static final String ALGORITHM = "SHA256withECDSA";
     private static final Path pongSingFile = Paths.get("src", "main", "resources","PongApp.sig");
-
 
     /**
      * Method for generating digital signature.
+     * @param privatekey
+     * @param path
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @throws SignatureException 
      */
     public static void generateSignature (PrivateKey privatekey, Path path) throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
 
-        //Create an instance of the signature scheme for the given signature algorithm
-        Signature sig = Signature.getInstance(algorithm, "SunEC");
+        //Create an instance of the signature scheme for the given signature ALGORITHM
+        Signature sig = Signature.getInstance(ALGORITHM, "SunEC");
 
         //Initialize the signature scheme
         sig.initSign(privatekey);
@@ -40,13 +46,21 @@ public class SigningFile {
 
     /**
      * Method for verifying digital signature.
+     * @param publickey
+     * @param path
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @throws SignatureException 
      */
     public static boolean verifySignature(PublicKey publickey, Path path)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
 
-        //Create an instance of the signature scheme for the given signature algorithm
-        Signature sig = Signature.getInstance(algorithm, "SunEC");
+        //Create an instance of the signature scheme for the given signature ALGORITHM
+        Signature sig = Signature.getInstance(ALGORITHM, "SunEC");
 
         //Initialize the signature verification scheme.
         sig.initVerify(publickey);

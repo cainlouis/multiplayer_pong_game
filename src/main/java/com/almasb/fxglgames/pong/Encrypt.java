@@ -8,6 +8,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
 
+/**
+ * Encrypt sets up the algorithm and IV and uses it encrypt and decrypt files
+ * @author Rodrigo Rivas Alfaro
+ */
 public class Encrypt {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
