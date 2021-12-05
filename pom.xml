@@ -18,6 +18,7 @@
         <jfx.maven.plugin.version>0.0.6</jfx.maven.plugin.version>
         <fxgl.version>dev-SNAPSHOT</fxgl.version>
         <mainClassName>com.almasb.fxglgames.pong.PongApp</mainClassName>
+        <dependency-check-maven.version>6.5.0</dependency-check-maven.version>
     </properties>
 
     <dependencies>
@@ -59,6 +60,20 @@
                     <jlinkZipName>pong-game</jlinkZipName>
                     <mainClass>${mainClassName}</mainClass>
                 </configuration>
+            </plugin>
+            
+            <!-- OWASP Dependancy Check -->
+            <plugin>
+              <groupId>org.owasp</groupId>
+              <artifactId>dependency-check-maven</artifactId>
+              <version>${dependency-check-maven.version}</version>
+              <executions>
+                  <execution>
+                      <goals>
+                          <goal>check</goal>
+                      </goals>
+                  </execution>
+              </executions>
             </plugin>
         </plugins>
     </build>
