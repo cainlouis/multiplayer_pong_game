@@ -31,17 +31,19 @@ public class GameMenu extends FXGLMenu {
             try {
                 PongApp.loadLastGame();
             } catch (Exception e) {
-                e.printStackTrace();
+                e.getMessage();
             }
         });
         PongMenuButton mainMenu = new PongMenuButton("Main Menu", () -> fireExitToMainMenu());
         PongMenuButton exit = new PongMenuButton("Exit Game", () -> {
-            try {
-                PongApp.signFile();
-                fireExit();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                getDialogService().showMessageBox("File signed", () -> {
+                    try {
+                        PongApp.signFile();
+                        fireExit();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
 
         });
 
