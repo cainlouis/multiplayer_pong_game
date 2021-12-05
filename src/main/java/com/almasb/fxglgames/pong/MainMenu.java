@@ -40,7 +40,11 @@ public class MainMenu extends FXGLMenu {
         text.setTranslateY(FXGL.getAppHeight() / 2 - 300 / 2);
 
         PongMenuButton newGame = new PongMenuButton("New Game", () -> fireNewGame());
-        PongMenuButton exit = new PongMenuButton("Quit", () -> fireExit());
+        PongMenuButton exit = new PongMenuButton("Quit", () -> {
+
+
+            fireExit();
+        });
 
         VBox container = new VBox(newGame, exit);
         container.setTranslateX(100);
