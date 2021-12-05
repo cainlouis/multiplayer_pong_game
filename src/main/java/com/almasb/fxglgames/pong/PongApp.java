@@ -52,25 +52,20 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.io.File;
-import java.lang.reflect.Type;
 import java.net.InetAddress;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.EnumSet;
 import java.util.Map;
 
 import static com.almasb.fxgl.dsl.FXGL.*;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Optional;
 
 /**
@@ -92,9 +87,11 @@ public class PongApp extends GameApplication {
     private final static String savedFileName = "savedFile.sav";
     private final static Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
     private final static Path pongSignatureFile = Paths.get("src", "main", "resources", "PongApp.sig");
+    private final static Path encryptedFilePath = Paths.get("src","main","resources", "savedFiles","encryptedFile");
     private BatComponent playerBat1, playerBat2;
     private Input clientInput;
     private String ipAddress;
+    private boolean isPreviousGame;
 
     @Override
     protected void initSettings(GameSettings settings) {
@@ -104,10 +101,9 @@ public class PongApp extends GameApplication {
         
         //Required for multiplayer service
         settings.addEngineService(MultiplayerService.class); //Required for multiplayer service
-
+        //Required to show main menu
         settings.setMainMenuEnabled(true);
-        //settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
-
+        //Get the menus
         settings.setSceneFactory(new PongMenuFactory());
     }
 
@@ -156,7 +152,7 @@ public class PongApp extends GameApplication {
         /*
          * decrypt file and generate a savedFile.sav
          */
-        File encryptedFile= new File(String.valueOf(Paths.get("src","main","resources", "savedFiles","encryptedFile")));
+        File encryptedFile= new File(String.valueOf(encryptedFilePath));
         File savedFile =  new File(savedFileName);
         Encrypt.decryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)), encryptedFile, savedFile);
         getSaveLoadService().readAndLoadTask(savedFileName).run();
@@ -171,7 +167,7 @@ public class PongApp extends GameApplication {
          * generates savedFileName, encrypts it and delete the saved file.
          */
         File savedFile =  new File(savedFileName);
-        File encryptedFile= new File(String.valueOf(Paths.get("src","main","resources", "savedFiles","encryptedFile")));
+        File encryptedFile= new File(String.valueOf(encryptedFilePath));
         Encrypt.encryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)),savedFile, encryptedFile);
         savedFile.delete();
 
@@ -205,8 +201,10 @@ public class PongApp extends GameApplication {
 
 
                 if (isServer) {
+                    //Ask for the password until they get the right password
                     do {
                         try {
+                            //call method that display the password field return a boolean on if the password entered is right
                             pass = loginDialog();
                         } catch (NoSuchAlgorithmException | KeyStoreException e) {
                             e.printStackTrace();
@@ -219,7 +217,7 @@ public class PongApp extends GameApplication {
                         }
 
                         try {
-                            if (Files.exists(pongFile)) {
+                            if (Files.exists(pongSignatureFile)) {
                                 SigningFile.verifySignature(ks.GetPublicKey(HashingSHA3.bytesToHex(hash)), pongFile);
                             }
                         } catch (Exception e) {
@@ -239,7 +237,24 @@ public class PongApp extends GameApplication {
                         });
                         
                         //Start listening on the specified TCP port.
-                        server.startAsync();  
+                        server.startAsync();
+                        //Ask the host if they want to load previous game before starting a new game
+                        getDialogService().showConfirmationBox("Do you want load the previous game?", answer -> {
+                            isPreviousGame = answer;
+                            //If they want to load and the previous game exist
+                            if (isPreviousGame && Files.exists(encryptedFilePath)) {
+                                //load last game
+                                try {
+                                    loadLastGame();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            //If the previous game was not saved show a dialog
+                            else if (!Files.exists(encryptedFilePath)) {
+                                getDialogService().showMessageBox("There is no previous game! Starting a new game");
+                            }
+                        });
                     } catch (RuntimeException | IOException e) {
                         getDialogService().showErrorBox("Can't create new host! Server is already hosting.", () -> {
                             connectClient();
@@ -254,9 +269,8 @@ public class PongApp extends GameApplication {
 
     private void connectClient() {
         getDialogService().showInputBox("Enter Server IP Address to connect as client", answer -> {
-            ipAddress = answer;
-
             try {
+                ipAddress = InputValidation.validateIP(answer);
                 InetAddress address = InetAddress.getByName(ipAddress);
                 boolean reachable = address.isReachable(2000);
 
@@ -280,6 +294,10 @@ public class PongApp extends GameApplication {
 
                 //Establish the connection to the server.
                 client.connectAsync();
+            } catch (IllegalArgumentException e) {
+                getDialogService().showErrorBox("Black listed character have been found. Invalid IP address.", () -> {
+                    connectClient();
+                });
             } catch (RuntimeException e) {
                 getDialogService().showErrorBox("Server IP Address is not currently hosting. Try Again!", () -> {
                     connectClient();
@@ -290,7 +308,8 @@ public class PongApp extends GameApplication {
                 });
             } catch (Exception e) {
                 getDialogService().showErrorBox("An error has occurred. Try Again!", () -> {
-                    connectClient();
+                    e.printStackTrace();
+                    connectClient(); 
                 });
             }
         });
@@ -521,9 +540,9 @@ public class PongApp extends GameApplication {
 
         // Set the button types.
         ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
-        // ButtonType cancelButtonType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(loginButtonType);
 
+        //Creat the grid for the password
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -541,6 +560,7 @@ public class PongApp extends GameApplication {
         // Request focus on the username field by default.
         Platform.runLater(() -> password.requestFocus());
 
+        //display the dialog box and store the answer
         Optional<String> result = dialog.showAndWait();
 
         // reading the password from the user
@@ -579,11 +599,6 @@ public class PongApp extends GameApplication {
             SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), pongFile);
         }
     }
-
-    public static boolean getHost(){
-        return isHost;
-    }
-
 
     /**
      * Main method
