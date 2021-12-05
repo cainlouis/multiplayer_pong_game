@@ -200,9 +200,8 @@ public class PongApp extends GameApplication {
     
     private void connectClient() {
         getDialogService().showInputBox("Enter Server IP Address to connect as client", answer -> {
-            ipAddress = answer;
-            
             try {
+                ipAddress = InputValidation.validateIP(answer);
                 InetAddress address = InetAddress.getByName(ipAddress);
                 boolean reachable = address.isReachable(2000);
                 
@@ -227,6 +226,10 @@ public class PongApp extends GameApplication {
 
                 //Establish the connection to the server.
                 client.connectAsync();
+            } catch (IllegalArgumentException e) {
+                getDialogService().showErrorBox("Black listed character have been found. Invalid IP address.", () -> {
+                    connectClient();
+                });
             } catch (RuntimeException e) {
                 getDialogService().showErrorBox("Server IP Address is not currently hosting. Try Again!", () -> {
                     connectClient(); 
@@ -237,6 +240,7 @@ public class PongApp extends GameApplication {
                 });
             } catch (Exception e) {
                 getDialogService().showErrorBox("An error has occurred. Try Again!", () -> {
+                    e.printStackTrace();
                     connectClient(); 
                 });
             }

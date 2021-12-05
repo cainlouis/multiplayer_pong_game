@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- *
+ * InputValidation validates any inputs sent from the user
  * @author Nael Louis & Daniel Lam
  */
 public class InputValidation {
@@ -20,20 +20,21 @@ public class InputValidation {
     private static final Logger LOGGER = Logger.getLogger(InputValidation.class.getName());
     
     /**
-     * This method validates the input from outside of the project i.e.user input,
-     * data from the json.
+     * This method validates the user's input when connecting to a server via IP address
      * @param toValidate
      * @return 
      */
-    public static String validateString(String toValidate) {
+    public static String validateIP(String toValidate) {
 
         toValidate = Normalizer.normalize(toValidate, Normalizer.Form.NFKC);
         toValidate = Normalizer.normalize(toValidate, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
-        Pattern patternObj = Pattern.compile("[<>]");
+        // Accepts any alphabetical letter, number, "." and ":" for IP. Excludes any other character
+        Pattern patternObj = Pattern.compile("[^a-zA-Z0-9.:]");
         Matcher matcherObj = patternObj.matcher(toValidate);
         if (matcherObj.find()) {
             LOGGER.log(Level.SEVERE, "Black listed character found in input");
+            throw new IllegalArgumentException();
         }
-        return toValidate.replaceAll("[^A-Za-z0-9. ]", "");
+        return toValidate;
     }
 }
