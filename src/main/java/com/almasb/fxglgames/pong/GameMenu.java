@@ -7,6 +7,9 @@ import static com.almasb.fxgl.dsl.FXGL.getExecutor;
 import static com.almasb.fxgl.dsl.FXGL.getGameController;
 import javafx.scene.layout.VBox;
 
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * @author Almas Baimagambetov (almaslvl@gmail.com)
  */
@@ -14,12 +17,21 @@ public class GameMenu extends FXGLMenu {
 
     public GameMenu() {
         super(MenuType.GAME_MENU);
-        
-        PongMenuButton resume = new PongMenuButton("Resume", () -> {
-            fireResume();
+
+        PongMenuButton resume = new PongMenuButton("Resume", () -> fireResume());
+        PongMenuButton save = new PongMenuButton("Save", () -> {
+            try {
+                PongApp.saveLastGame();
+            } catch (Exception e) {
+            }
         });
-        PongMenuButton save = new PongMenuButton("Save", () -> fireSave());
-        PongMenuButton load = new PongMenuButton("Load", () -> PongApp.loadLastGame());
+        PongMenuButton load = new PongMenuButton("Load", () -> {
+            try {
+                PongApp.loadLastGame();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
         PongMenuButton mainMenu = new PongMenuButton("Main Menu", () -> fireExitToMainMenu());
         PongMenuButton exit = new PongMenuButton("Exit Game", () -> fireExit());
 
@@ -29,4 +41,6 @@ public class GameMenu extends FXGLMenu {
 
         getContentRoot().getChildren().add(container);
     }
+
+
 }

@@ -35,6 +35,8 @@ system/
 *.iml
 *.ipr
 *.iws
+/src/main/resources/keystore/*
+/src/main/resources/savedFiles/*
 
 ##############################
 ## NetBeans
