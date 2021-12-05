@@ -90,7 +90,8 @@ public class PongApp extends GameApplication {
     private static KeyStoring ks;
     private static byte[] hash;
     private final static String savedFileName = "savedFile.sav";
-    
+    private final static Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
+
     private BatComponent playerBat1, playerBat2;
     private Input clientInput;
     private String ipAddress;
@@ -217,6 +218,12 @@ public class PongApp extends GameApplication {
                             throw new RuntimeException();
                         }
 
+                        try {
+                            if (Files.exists(pongFile)) {
+                                SigningFile.verifySignature(ks.GetPublicKey(HashingSHA3.bytesToHex(hash)), pongFile);
+                            }
+                        } catch (Exception e) {
+                        }
                         //Setup the TCP port that the server will listen at.
                         var server = getNetService().newTCPServer(TCP_SERVER_PORT);
 
@@ -564,13 +571,17 @@ public class PongApp extends GameApplication {
         return isPassword;
     }
 
+    /**
+     * This is a helper method to sign the PongApp file when the user exits the game
+     * it uses the class SigningFile*/
     public static void signFile() throws Exception {
         if(isHost) {
-            Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
             SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), pongFile);
-//        getDialogService().showMessageBox("Signature Saved!");
         }
+    }
 
+    public static boolean getHost(){
+        return isHost;
     }
 
 
