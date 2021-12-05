@@ -41,5 +41,6 @@ _2 players:_
 3. On client, type in the host's IP address to connect to the server (localhost won't work here!)
 4. Play and win against your opponent!
 
-© Created by Nael Louis (1934115), Rodrigo Rivas Alfaro (1910674) & Daniel Lam (1932789)
+© Created by Nael Louis (1934115), Rodrigo Rivas Alfaro (1910674) & Daniel Lam (1932789).
+
 No rights reserved.
