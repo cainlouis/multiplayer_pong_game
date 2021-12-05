@@ -3,6 +3,8 @@ package com.almasb.fxglgames.pong;
 
 import com.almasb.fxgl.app.scene.FXGLMenu;
 import com.almasb.fxgl.app.scene.MenuType;
+import static com.almasb.fxgl.dsl.FXGL.getExecutor;
+import static com.almasb.fxgl.dsl.FXGL.getGameController;
 import javafx.scene.layout.VBox;
 
 import java.security.KeyStoreException;
