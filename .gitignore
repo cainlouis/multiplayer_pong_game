@@ -37,6 +37,7 @@ system/
 *.iws
 /src/main/resources/keystore/*
 /src/main/resources/savedFiles/*
+/src/main
 
 ##############################
 ## NetBeans
