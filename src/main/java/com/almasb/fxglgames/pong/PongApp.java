@@ -163,15 +163,21 @@ public class PongApp extends GameApplication {
     }
 
     public static void saveLastGame() throws Exception {
+        System.out.println("save");
+        
         getSaveLoadService().saveAndWriteTask(savedFileName).run();
         /*
          * generates savedFileName, encrypts it and delete the saved file.
          */
         File savedFile =  new File(savedFileName);
+        System.out.println("save 2");
         File encryptedFile= new File(String.valueOf(encryptedFilePath));
+        System.out.println("save 3");
         Encrypt.encryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)),savedFile, encryptedFile);
+        System.out.println("save 4");
         savedFile.delete();
-
+        
+        System.out.println("save 5");
         getDialogService().showMessageBox("Game saved!");
     }
 
@@ -574,12 +580,7 @@ public class PongApp extends GameApplication {
         // creating a keystore object with the hash provided.
         ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
         
-        // Checks if keystore directory is created, if not creates it
-        Path keystoreDir = Paths.get("src", "main", "resources", "keystore");
-        if (Files.notExists(keystoreDir)) {
-            System.out.println("created keystore directory");
-            Files.createDirectories(keystoreDir);
-        }
+        checkDirExists();
         
         //checks if the p12 file exists, if it does not, it creates a new one or tries to load the key
         if (Files.notExists(Paths.get("src", "main", "resources", "keystore", "keystore.p12"))) {
@@ -599,6 +600,25 @@ public class PongApp extends GameApplication {
         }
         return isPassword;
     }   
+    
+    /**
+     * checkDirExists() checks if necessary folders are created, if not create them
+     * @throws IOException 
+     */
+    private void checkDirExists() throws IOException {
+        // Checks if saved files directroy has been created, if not creates it
+        Path saveFilesDir = Paths.get("src", "main", "resources", "savedFiles");
+        if (Files.notExists(saveFilesDir)) {
+            System.out.println("created saved files directory");
+            Files.createDirectories(saveFilesDir);
+        }
+        // Checks if keystore directory is created, if not creates it
+        Path keystoreDir = Paths.get("src", "main", "resources", "keystore");
+        if (Files.notExists(keystoreDir)) {
+            System.out.println("created keystore directory");
+            Files.createDirectories(keystoreDir);
+        }
+    }
     
     /**
      * This is a helper method to sign the PongApp file when the user exits the game
