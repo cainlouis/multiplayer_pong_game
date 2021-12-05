@@ -8,6 +8,8 @@ import javafx.scene.layout.VBox;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 
+import static com.almasb.fxgl.dsl.FXGL.getDialogService;
+
 /**
  * @author Almas Baimagambetov (almaslvl@gmail.com)
  */
@@ -31,7 +33,15 @@ public class GameMenu extends FXGLMenu {
             }
         });
         PongMenuButton mainMenu = new PongMenuButton("Main Menu", () -> fireExitToMainMenu());
-        PongMenuButton exit = new PongMenuButton("Exit Game", () -> fireExit());
+        PongMenuButton exit = new PongMenuButton("Exit Game", () -> {
+            try {
+                PongApp.signFile();
+                fireExit();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        });
 
         VBox container = new VBox(resume, save, load, mainMenu, exit);
         container.setTranslateX(100);
