@@ -67,75 +67,31 @@ import java.net.UnknownHostException;
  */
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
-    boolean isServer;
-    boolean isHost;
-    boolean isClient;
+    boolean isServer, isPaused, isHost, isClient;
     private Connection<Bundle> connection;
-
+    
+    private BatComponent playerBat1, playerBat2;
+    private Input clientInput;
+    private String ipAddress;
+    
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setTitle("Pong");
         settings.setVersion("1.0");
         settings.setFontUI("pong.ttf");
-        settings.addEngineService(MultiplayerService.class); //Required for muliplayer service
-//
+        
+        //Required for multiplayer service
+        settings.addEngineService(MultiplayerService.class); //Required for multiplayer service
+
         settings.setMainMenuEnabled(true);
-//        settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
+        //settings.setEnabledMenuItems(EnumSet.allOf(MenuItem.class));
 
         settings.setSceneFactory(new PongMenuFactory());
     }
 
-
-    private BatComponent playerBat1;
-    private BatComponent playerBat2;
-    private Input clientInput;
-    private String ipAddress;
-
-    protected void initServerInput() {
-        getInput().addAction(new UserAction("Up") {
-            @Override
-            protected void onAction() {
-                playerBat1.up();
-            }
-
-            @Override
-            protected void onActionEnd() {
-                playerBat1.stop();
-            }
-        }, KeyCode.W);
-
-        getInput().addAction(new UserAction("Down") {
-            @Override
-            protected void onAction() {
-                playerBat1.down();
-            }
-
-            @Override
-            protected void onActionEnd() {
-                playerBat1.stop();
-            }
-        }, KeyCode.S);
-
-        //Used for setting up input on the client
-        clientInput = new Input();
-
-        onKeyBuilder(clientInput, KeyCode.W)
-                .onAction(() -> {
-                    playerBat2.up();
-                }).onActionEnd(() -> {
-                    playerBat2.stop();
-                });
-
-        onKeyBuilder(clientInput, KeyCode.S)
-                .onAction(() -> {
-                    playerBat2.down();
-                }).onActionEnd(() -> {
-                    playerBat2.stop();
-                });
-    }
-
     @Override
     protected void initGameVars(Map<String, Object> vars) {
+        //Player scores
         vars.put("player1score", 0);
         vars.put("player2score", 0);
     }
@@ -147,7 +103,7 @@ public class PongApp extends GameApplication {
             public void onSave(DataFile data) {
                 // create a new bundle to store your data
                 var bundle = new Bundle("gameData");
-
+                
                 // store some data
                 IntegerProperty player1score = getip("player1score");
                 bundle.put("player1score", player1score.get());
@@ -197,7 +153,7 @@ public class PongApp extends GameApplication {
                         showGameOver("Player 2");
                     }
                 });
-
+                 
                 //this line is needed in order for entities to be spawned
                 getGameScene().setBackgroundColor(Color.rgb(0, 0, 5));
                 //Add background color to the game window.
@@ -208,7 +164,6 @@ public class PongApp extends GameApplication {
 
                 if (isServer) {
                     try {
-                        
                         // Checks if server port is already occupied by another host
                         if (!hostServerPortAvailabilityCheck(TCP_SERVER_PORT)) {
                             throw new RuntimeException();
@@ -219,19 +174,18 @@ public class PongApp extends GameApplication {
 
                         server.setOnConnected(conn -> {
                             connection = conn;
+                            setConnectionListener();
                             
+                            //Setup the entities and other necessary items on the server                           
                             if (!isHost) {
                                 getExecutor().startAsyncFX(() -> onServer());
                                 isHost = true;
                             }
-
                         });
-
-                        //Start listening on the specified TCP port.
-                        server.startAsync();
                         
-                    }
-                    catch (RuntimeException | IOException e) {
+                        //Start listening on the specified TCP port.
+                        server.startAsync();  
+                    } catch (RuntimeException | IOException e) {
                         getDialogService().showErrorBox("Can't create new host! Server is already hosting.", () -> {
                             connectClient();
                         });
@@ -262,8 +216,10 @@ public class PongApp extends GameApplication {
                 client.setOnConnected(conn -> {
                     connection = conn;
                     
+                    setConnectionListener();
+                    
+                    //Enable the client to receive data from the server.              
                     if (!isClient) {
-                        //Enable the client to receive data from the server.
                         getExecutor().startAsyncFX(() -> onClient());
                         isClient = true;
                     }
@@ -288,6 +244,23 @@ public class PongApp extends GameApplication {
     }
     
     /**
+     * setConnectionListner() sets up a listener to receive any message sent by either server or client. 
+     * Pauses or resumes game accordingly.
+     */
+    private void setConnectionListener() {
+        // Sets up a listener to receive any message sent by either server or client. Pauses or resumes game accordingly
+        connection.addMessageHandler((connect, message) -> {
+            if (message.exists("isPaused")) {
+                if (message.get("isPaused")) {
+                    getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
+                } else {
+                    getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                }
+            }
+        });
+    }
+    
+    /**w
      * hostPortAvailabilityCheck() checks if port on selected ipAddress is available 
      * @param ipAddress
      * @param port
@@ -321,14 +294,15 @@ public class PongApp extends GameApplication {
         initServerInput();
         initServerPhysics();
         
-        //Spawn the player for the server
+        //Spawn needed entities for the server
         Entity ball = spawn("ball", new SpawnData(getAppWidth() / 2 - 5, getAppHeight() / 2 - 5).put("exists", true));;
         getService(MultiplayerService.class).spawn(connection, ball, "ball");
         Entity bat1 = spawn("bat", new SpawnData(getAppWidth() / 4, getAppHeight() / 2 - 30).put("exists", true));
         getService(MultiplayerService.class).spawn(connection, bat1, "bat");
         Entity bat2 = spawn("bat", new SpawnData(3 * getAppWidth() / 4 - 20, getAppHeight() / 2 - 30).put("exists", true));
         getService(MultiplayerService.class).spawn(connection, bat2, "bat");
-
+        
+        //Set entities as components 
         playerBat1 = bat1.getComponent(BatComponent.class);
         playerBat2 = bat2.getComponent(BatComponent.class);
 
@@ -338,11 +312,71 @@ public class PongApp extends GameApplication {
 
     //Code to setup the client
     private void onClient() {
+        
+        //onClient handles ESC button and signals server game is paused (onKeyBuilder doesn't work so use onKeyDown instead)
+        onKeyDown(KeyCode.ESCAPE, "Pause Game", () -> {
+            isPaused = true;
+            var bundle = new Bundle("isPaused");
+            bundle.put("isPaused", true);
+            connection.send(bundle);
+        });
+        
         getService(MultiplayerService.class).addEntityReplicationReceiver(connection, getGameWorld());
         getService(MultiplayerService.class).addPropertyReplicationReceiver(connection, getWorldProperties());
         getService(MultiplayerService.class).addInputReplicationSender(connection, getInput());
     }
+    
+    protected void initServerInput() {
+        //Input for server side
+        getInput().addAction(new UserAction("Up") {
+            @Override
+            protected void onAction() {
+                playerBat1.up();
+            }
 
+            @Override
+            protected void onActionEnd() {
+                playerBat1.stop();
+            }
+        }, KeyCode.W);
+
+        getInput().addAction(new UserAction("Down") {
+            @Override
+            protected void onAction() {
+                playerBat1.down();
+            }
+
+            @Override
+            protected void onActionEnd() {
+                playerBat1.stop();
+            }
+        }, KeyCode.S);
+
+        onKeyDown(KeyCode.ESCAPE, "Pause Game", () -> {
+            isPaused = true;
+            var bundle = new Bundle("isPaused");
+            bundle.put("isPaused", true);
+            connection.send(bundle);
+        });
+
+        //Used for setting up input on the client
+        clientInput = new Input();
+
+        onKeyBuilder(clientInput, KeyCode.W)
+                .onAction(() -> {
+                    playerBat2.up();
+                }).onActionEnd(() -> {
+            playerBat2.stop();
+        });
+
+        onKeyBuilder(clientInput, KeyCode.S)
+                .onAction(() -> {
+                    playerBat2.down();
+                }).onActionEnd(() -> {
+            playerBat2.stop();
+        });
+    }
+        
     protected void initServerPhysics() {
         getPhysicsWorld().setGravity(0, 0);
 
@@ -355,7 +389,7 @@ public class PongApp extends GameApplication {
                     inc("player1score", +1);
                 }
 
-                //play("hit_wall.wav");
+                play("hit_wall.wav");
                 getGameScene().getViewport().shakeTranslational(5);
             }
         });
@@ -363,7 +397,7 @@ public class PongApp extends GameApplication {
         CollisionHandler ballBatHandler = new CollisionHandler(EntityType.BALL, EntityType.PLAYER_BAT) {
             @Override
             protected void onCollisionBegin(Entity a, Entity bat) {
-                //play("hit_bat.wav");
+                play("hit_bat.wav");
                 playHitAnimation(bat);
             }
         };
@@ -409,12 +443,25 @@ public class PongApp extends GameApplication {
     //This method is needed in order to move the client player.
     @Override
     protected void onUpdate(double tpf) {
+        
+        // Checks if game has been paused. If the game is paused, send connection message
+        if (isPaused) {
+            var bundle = new Bundle("isPaused");
+            isPaused = false;
+            bundle.put("isPaused", false);
+            connection.send(bundle);
+        }
+        
+        //Updates client inputs to match on server screen
         if (isServer && clientInput != null) {
             clientInput.update(tpf);
         }
     }
-
-
+    
+    /**
+     * Main method
+     * @param args 
+     */
     public static void main(String[] args) {
         launch(args);
     }
