@@ -56,6 +56,7 @@ import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -81,7 +82,7 @@ import java.util.Optional;
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
     boolean isServer;
-    boolean isHost;
+    static boolean isHost;
     boolean isClient;
     private Connection<Bundle> connection;
     boolean pass;
@@ -516,6 +517,15 @@ public class PongApp extends GameApplication {
             System.out.println("Wrong Password");
         }
         return isPassword;
+    }
+
+    public static void signFile() throws Exception {
+        if(isHost) {
+            Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
+            SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), pongFile);
+//        getDialogService().showMessageBox("Signature Saved!");
+        }
+
     }
 
     public static void main(String[] args) {
