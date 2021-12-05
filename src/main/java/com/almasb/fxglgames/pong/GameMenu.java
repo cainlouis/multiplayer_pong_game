@@ -20,13 +20,14 @@ public class GameMenu extends FXGLMenu {
     public GameMenu() {
         super(MenuType.GAME_MENU);
 
-        PongMenuButton resume = new PongMenuButton("Resume", () -> fireResume());
+        //Create the button for the main menu and their action
+        PongMenuButton resume = new PongMenuButton("Resume", () -> fireResume()); //Allow the user to continue the current game
         PongMenuButton save = new PongMenuButton("Save", () -> {
             try {
                 PongApp.saveLastGame();
             } catch (Exception e) {
             }
-        });
+        }); //Allow the user to save the current game
         PongMenuButton load = new PongMenuButton("Load", () -> {
             try {
                 PongApp.loadLastGame();
@@ -44,13 +45,14 @@ public class GameMenu extends FXGLMenu {
                         e.printStackTrace();
                     }
                 });
-
         });
 
+        //Create a vbox that acts like a container for the buttons and set the position to the lower left corner
         VBox container = new VBox(resume, save, load, mainMenu, exit);
         container.setTranslateX(100);
         container.setTranslateY(450);
 
+        //Add the container to the scene
         getContentRoot().getChildren().add(container);
     }
 
