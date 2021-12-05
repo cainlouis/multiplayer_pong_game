@@ -207,7 +207,7 @@ public class PongApp extends GameApplication {
                         try {
                             //call method that display the password field return a boolean on if the password entered is right
                             pass = loginDialog();
-                        } catch (NoSuchAlgorithmException | KeyStoreException e) {
+                        } catch (NoSuchAlgorithmException | KeyStoreException | IOException e) {
                             e.printStackTrace();
                         }
                     } while (!pass);
@@ -532,7 +532,7 @@ public class PongApp extends GameApplication {
         }
     }
 
-    protected boolean loginDialog() throws NoSuchAlgorithmException, KeyStoreException {
+    protected boolean loginDialog() throws NoSuchAlgorithmException, KeyStoreException, IOException {
         boolean isPassword = false;
         // Create the custom dialog.
         Dialog<String> dialog = new Dialog<>();
@@ -573,13 +573,21 @@ public class PongApp extends GameApplication {
 
         // creating a keystore object with the hash provided.
         ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
-
+        
+        // Checks if keystore directory is created, if not creates it
+        Path keystoreDir = Paths.get("src", "main", "resources", "keystore");
+        if (Files.notExists(keystoreDir)) {
+            System.out.println("created keystore directory");
+            Files.createDirectories(keystoreDir);
+        }
+        
         //checks if the p12 file exists, if it does not, it creates a new one or tries to load the key
         if (Files.notExists(Paths.get("src", "main", "resources", "keystore", "keystore.p12"))) {
             System.out.println("keys created");
             isPassword = true;
             ks.createStoredKeys();
         }
+        
         try {
             ks.LoadKey(HashingSHA3.bytesToHex(hash));
             isPassword = true;
@@ -590,8 +598,8 @@ public class PongApp extends GameApplication {
             System.out.println("Wrong Password");
         }
         return isPassword;
-    }
-
+    }   
+    
     /**
      * This is a helper method to sign the PongApp file when the user exits the game
      * it uses the class SigningFile*/
