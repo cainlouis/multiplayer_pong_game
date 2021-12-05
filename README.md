@@ -8,7 +8,7 @@
 
 ## Description
 
-This project consists of a Multiplayer Pong Game originally created by Almas Baimagambetov ([GitHub](https://github.com/AlmasB)). Pong is a 2D sports game in which two players try to score against each other while controlling paddles up and down until one player reaches the maxiumum of 10 points. In our version, the game has been modified and altered so that it implements a Multiplayer functionality for two players to connect with each other through IP addresses and play simultaneously (one of which is host, the other is client). Players also have the option to save and load the state of their game and their files will be safely encrypted and decrypted using a SHA-256 algorithm.
+This project consists of a Multiplayer Pong Game originally created by Almas Baimagambetov ([GitHub](https://github.com/AlmasB)). Pong is a 2D sports game in which two players try to score against each other while controlling paddles up and down until one player reaches the maxiumum of 10 points. In our version, the game has been modified and altered so that it implements a Multiplayer functionality for two players to connect with each other through IP addresses and play simultaneously (one of which is host, the other is client). Players also have the option to save and load the state of their game and their files will be safely encrypted and decrypted using a SHA3-256 algorithm.
 
 The project is based on Java and a Java Game Library called FXGL which provides the functionality for the server and client. GUI is implemented using the JavaFX library.
 
