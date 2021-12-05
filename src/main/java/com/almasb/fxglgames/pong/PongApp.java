@@ -56,6 +56,7 @@ import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -80,13 +81,17 @@ import java.util.Optional;
  */
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
-    boolean isServer, isPaused, isHost, isClient;
+    boolean isServer;
+    boolean isPaused;
+    static boolean isHost;
+    boolean isClient;
     private Connection<Bundle> connection;
     boolean pass;
     private static KeyStoring ks;
     private static byte[] hash;
     private final static String savedFileName = "savedFile.sav";
-    
+    private final static Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
+
     private BatComponent playerBat1, playerBat2;
     private Input clientInput;
     private String ipAddress;
@@ -213,6 +218,12 @@ public class PongApp extends GameApplication {
                             throw new RuntimeException();
                         }
 
+                        try {
+                            if (Files.exists(pongFile)) {
+                                SigningFile.verifySignature(ks.GetPublicKey(HashingSHA3.bytesToHex(hash)), pongFile);
+                            }
+                        } catch (Exception e) {
+                        }
                         //Setup the TCP port that the server will listen at.
                         var server = getNetService().newTCPServer(TCP_SERVER_PORT);
 
@@ -243,9 +254,8 @@ public class PongApp extends GameApplication {
 
     private void connectClient() {
         getDialogService().showInputBox("Enter Server IP Address to connect as client", answer -> {
-            ipAddress = answer;
-
             try {
+                ipAddress = InputValidation.validateIP(answer);
                 InetAddress address = InetAddress.getByName(ipAddress);
                 boolean reachable = address.isReachable(2000);
 
@@ -269,6 +279,10 @@ public class PongApp extends GameApplication {
 
                 //Establish the connection to the server.
                 client.connectAsync();
+            } catch (IllegalArgumentException e) {
+                getDialogService().showErrorBox("Black listed character have been found. Invalid IP address.", () -> {
+                    connectClient();
+                });
             } catch (RuntimeException e) {
                 getDialogService().showErrorBox("Server IP Address is not currently hosting. Try Again!", () -> {
                     connectClient();
@@ -279,7 +293,8 @@ public class PongApp extends GameApplication {
                 });
             } catch (Exception e) {
                 getDialogService().showErrorBox("An error has occurred. Try Again!", () -> {
-                    connectClient();
+                    e.printStackTrace();
+                    connectClient(); 
                 });
             }
         });
@@ -559,7 +574,21 @@ public class PongApp extends GameApplication {
         }
         return isPassword;
     }
- 
+
+    /**
+     * This is a helper method to sign the PongApp file when the user exits the game
+     * it uses the class SigningFile*/
+    public static void signFile() throws Exception {
+        if(isHost) {
+            SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), pongFile);
+        }
+    }
+
+    public static boolean getHost(){
+        return isHost;
+    }
+
+
     /**
      * Main method
      * @param args 

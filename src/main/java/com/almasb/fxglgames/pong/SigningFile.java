@@ -8,9 +8,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
 
+import static com.almasb.fxgl.dsl.FXGL.getDialogService;
+
 public class SigningFile {
 
     private static final String algorithm = "SHA256withECDSA";
+    private static final Path pongSingFile = Paths.get("src", "main", "resources","PongApp.sig");
+
 
     /**
      * Method for generating digital signature.
@@ -28,8 +32,8 @@ public class SigningFile {
         String message = new String(Files.readAllBytes(path));
         sig.update(message.getBytes("UTF-8"));
         byte[] signature = sig.sign();
-        if(Files.notExists(Paths.get("src", "main", "resources","PongApp.sig"))) {
-            Files.write(Paths.get("src", "main", "resources", "PongApp.sig"), signature);
+        if(Files.notExists(pongSingFile)) {
+            Files.write(pongSingFile, signature);
         }
     }
 
@@ -55,8 +59,10 @@ public class SigningFile {
         boolean validSignature = sig.verify(readSignature());
 
         if(validSignature) {
+            getDialogService().showMessageBox("Signature is valid");
             System.out.println("\nSignature is valid");
         } else {
+            getDialogService().showMessageBox("Signature is NOT valid!!!");
             System.out.println("\nSignature is NOT valid!!!");
         }
 
@@ -65,8 +71,7 @@ public class SigningFile {
 
 
     public static byte[] readSignature() throws IOException {
-        return Files.readAllBytes(Paths.get("src", "main", "resources","PongApp.sig",""));
-
+        return Files.readAllBytes(pongSingFile);
     }
 
 }
