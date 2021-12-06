@@ -10,6 +10,10 @@ import javafx.scene.text.Text;
 
 import static com.almasb.fxgl.dsl.FXGLForKtKt.getUIFactoryService;
 
+/**
+ * PongMenuButton specifies the style of a button on the menu
+ * @author Nael Louis
+ */
 public class PongMenuButton extends StackPane {
     private String name;
     private Runnable action;

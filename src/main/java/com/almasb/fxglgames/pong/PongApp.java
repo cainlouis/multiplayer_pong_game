@@ -72,7 +72,7 @@ import java.util.Optional;
  * A simple clone of Pong.
  * Sounds from https://freesound.org/people/NoiseCollector/sounds/4391/ under CC BY 3.0.
  *
- * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
+ * @author Almas Baimagambetov, Nael Louis, Daniel Lam
  */
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
@@ -93,7 +93,11 @@ public class PongApp extends GameApplication {
     private Input clientInput;
     private String ipAddress;
     private boolean isPreviousGame;
-
+    
+    /**
+     * initSettings() sets up the settings for the project
+     * @param settings 
+     */
     @Override
     protected void initSettings(GameSettings settings) {
         settings.setTitle("Pong");
@@ -101,20 +105,27 @@ public class PongApp extends GameApplication {
         settings.setFontUI("pong.ttf");
         
         //Required for multiplayer service
-        settings.addEngineService(MultiplayerService.class); //Required for multiplayer service
+        settings.addEngineService(MultiplayerService.class);
         //Required to show main menu
         settings.setMainMenuEnabled(true);
         //Get the menus
         settings.setSceneFactory(new PongMenuFactory());
     }
-
+    
+    /**
+     * initGameVars sets up player score at 0
+     * @param vars 
+     */
     @Override
     protected void initGameVars(Map<String, Object> vars) {
         //Player scores
         vars.put("player1score", 0);
         vars.put("player2score", 0);
     }
-
+    
+    /**
+     * onPreInit() stores or loads up the player scores using Bundles
+     */
     @Override
     protected void onPreInit() {
         getSaveLoadService().addHandler(new SaveLoadHandler() {
@@ -148,39 +159,46 @@ public class PongApp extends GameApplication {
             }
         });
     }
-
+    
+    /**
+     * loadLastGame() takes encrypted save file and loads contents onto current game
+     * @throws Exception 
+     */
     public static void loadLastGame() throws Exception {
         /*
          * decrypt file and generate a savedFile.sav
          */
-        File encryptedFile= new File(String.valueOf(encryptedFilePath));
-        File savedFile =  new File(savedFileName);
+        File encryptedFile = new File(String.valueOf(encryptedFilePath));
+        File savedFile = new File(savedFileName);
         Encrypt.decryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)), encryptedFile, savedFile);
         getSaveLoadService().readAndLoadTask(savedFileName).run();
         savedFile.delete();
 
         getDialogService().showMessageBox("Game loaded!");
     }
-
+    
+    /**
+     * saveLastGame() saves current game as file and encrypts it when invoked
+     * @throws Exception 
+     */
     public static void saveLastGame() throws Exception {
-        System.out.println("save");
         
         getSaveLoadService().saveAndWriteTask(savedFileName).run();
+        
         /*
          * generates savedFileName, encrypts it and delete the saved file.
          */
         File savedFile =  new File(savedFileName);
-        System.out.println("save 2");
         File encryptedFile= new File(String.valueOf(encryptedFilePath));
-        System.out.println("save 3");
         Encrypt.encryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)),savedFile, encryptedFile);
-        System.out.println("save 4");
         savedFile.delete();
-        
-        System.out.println("save 5");
+
         getDialogService().showMessageBox("Game saved!");
     }
-
+    
+    /**
+     * initGame() sets up the Pong game and asks user if he's a client or server
+     */
     @Override
     protected void initGame() {
         runOnce(() -> {
@@ -208,27 +226,31 @@ public class PongApp extends GameApplication {
 
 
                 if (isServer) {
-                    //Ask for the password until they get the right password
-                    do {
-                        try {
-                            //call method that display the password field return a boolean on if the password entered is right
-                            pass = loginDialog();
-                        } catch (NoSuchAlgorithmException | KeyStoreException | IOException e) {
-                            e.printStackTrace();
-                        }
-                    } while (!pass);
                     try {
                         // Checks if server port is already occupied by another host
                         if (!hostServerPortAvailabilityCheck(TCP_SERVER_PORT)) {
                             throw new RuntimeException();
                         }
-
+                        
+                        //Ask for the password until they get the right password
+                        do {
+                            try {
+                                //call method that display the password field return a boolean on if the password entered is right
+                                pass = loginDialog();
+                            } catch (NoSuchAlgorithmException | KeyStoreException | IOException e) {
+                                e.printStackTrace();
+                            }
+                        } while (!pass);
+                        
+                        //Verify signature of public key
                         try {
                             if (Files.exists(pongSignatureFile)) {
                                 SigningFile.verifySignature(ks.GetPublicKey(HashingSHA3.bytesToHex(hash)), pongFile);
                             }
                         } catch (Exception e) {
+                            e.printStackTrace();
                         }
+                        
                         //Setup the TCP port that the server will listen at.
                         var server = getNetService().newTCPServer(TCP_SERVER_PORT);
 
@@ -273,7 +295,10 @@ public class PongApp extends GameApplication {
             });
         }, Duration.seconds(0.5));
     }
-
+    
+    /**
+     * connectClient() displays dialog box to input IP Address
+     */
     private void connectClient() {
         getDialogService().showInputBox("Enter Server IP Address to connect as client", answer -> {
             try {
@@ -369,7 +394,9 @@ public class PongApp extends GameApplication {
         }
     }
 
-    //Code to setup entities on other necessities on the server.
+    /**
+     * Code to setup entities on other necessities on the server.
+     */
     private void onServer() {
         initServerInput();
         initServerPhysics();
@@ -390,7 +417,9 @@ public class PongApp extends GameApplication {
         getService(MultiplayerService.class).addPropertyReplicationSender(connection, getWorldProperties());
     }
 
-    //Code to setup the client
+    /**
+     * Code to setup the client
+     */
     private void onClient() {
         
         //onClient handles ESC button and signals server game is paused (onKeyBuilder doesn't work so use onKeyDown instead)
@@ -406,6 +435,9 @@ public class PongApp extends GameApplication {
         getService(MultiplayerService.class).addInputReplicationSender(connection, getInput());
     }
     
+    /**
+     * initServerInput() sets up the inputs on the server side
+     */
     protected void initServerInput() {
         //Input for server side
         getInput().addAction(new UserAction("Up") {
@@ -456,7 +488,10 @@ public class PongApp extends GameApplication {
             playerBat2.stop();
         });
     }
-        
+    
+    /**
+     * initServerPhysics() sets the physics on the server side
+     */
     protected void initServerPhysics() {
         getPhysicsWorld().setGravity(0, 0);
 
@@ -484,7 +519,10 @@ public class PongApp extends GameApplication {
 
         getPhysicsWorld().addCollisionHandler(ballBatHandler);
     }
-
+    
+    /**
+     * initUI() displays the player score
+     */
     @Override
     protected void initUI() {
         MainUIController controller = new MainUIController();
@@ -495,7 +533,10 @@ public class PongApp extends GameApplication {
 
         getGameScene().addUI(ui);
     }
-
+    
+    /**
+     * initScreenBounds() sets up the wall entities to bounce ball
+     */
     private void initScreenBounds() {
         Entity walls = entityBuilder()
                 .type(EntityType.WALL)
@@ -504,7 +545,11 @@ public class PongApp extends GameApplication {
 
         getGameWorld().addEntity(walls);
     }
-
+    
+    /**
+     * playhitAnimation() runs the animation if ball hits a paddle
+     * @param bat 
+     */
     private void playHitAnimation(Entity bat) {
         animationBuilder()
                 .autoReverse(true)
@@ -515,7 +560,11 @@ public class PongApp extends GameApplication {
                 .to(0)
                 .buildAndPlay();
     }
-
+    
+    /**
+     * showGameOver() displays Game Over screen along with winner
+     * @param winner 
+     */
     private void showGameOver(String winner) {
         getDialogService().showMessageBox(winner + " won! Demo over\nThanks for playing", getGameController()::exit);
     }
@@ -537,7 +586,14 @@ public class PongApp extends GameApplication {
             clientInput.update(tpf);
         }
     }
-
+    
+    /**
+     * loginDialog() displays the dialog for user to enter password 
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws KeyStoreException
+     * @throws IOException 
+     */
     protected boolean loginDialog() throws NoSuchAlgorithmException, KeyStoreException, IOException {
         boolean isPassword = false;
         // Create the custom dialog.
@@ -622,9 +678,11 @@ public class PongApp extends GameApplication {
     
     /**
      * This is a helper method to sign the PongApp file when the user exits the game
-     * it uses the class SigningFile*/
+     * it uses the class SigningFile
+     * @throws java.lang.Exception
+     */
     public static void signFile() throws Exception {
-        if(isHost) {
+        if (isHost) {
             SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), pongFile);
         }
     }

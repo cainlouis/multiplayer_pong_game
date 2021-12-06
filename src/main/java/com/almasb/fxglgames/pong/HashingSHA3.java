@@ -4,11 +4,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * HashingSHA3 takes the password and hashes it using the SHA3-256 algorithm
+ * @author Rodrigo Rivas Alfaro
+ */
 public class HashingSHA3 {
     private static final String ALGORITHM = "SHA3-256";
 
     /**
-     * ShA3-256 hashing. Possible ALGORITHM choices includes "SHA-256" "SHA-512",
+     * SHA3-256 hashing. Possible algorithm choices includes "SHA-256" "SHA-512",
      * "SHA3-256" and "SHA3-512".
      * @param password
      * @return

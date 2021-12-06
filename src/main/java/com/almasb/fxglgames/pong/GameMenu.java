@@ -35,9 +35,6 @@ public class GameMenu extends FXGLMenu {
             }
         });
         
-        //Allow user to return to main menu
-        PongMenuButton mainMenu = new PongMenuButton("Main Menu", () -> fireExitToMainMenu());
-        
         //Allow user to exit game
         PongMenuButton exit = new PongMenuButton("Exit Game", () -> {
                 getDialogService().showMessageBox("File signed", () -> {
@@ -51,7 +48,7 @@ public class GameMenu extends FXGLMenu {
         });
 
         //Create a vbox that acts like a container for the buttons and set the position to the lower left corner
-        VBox container = new VBox(resume, save, load, mainMenu, exit);
+        VBox container = new VBox(resume, save, load, exit);
         container.setTranslateX(100);
         container.setTranslateY(450);
 
