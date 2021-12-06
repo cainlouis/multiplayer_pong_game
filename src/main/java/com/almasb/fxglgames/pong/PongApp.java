@@ -84,10 +84,10 @@ public class PongApp extends GameApplication {
     boolean pass;
     private static KeyStoring ks;
     private static byte[] hash;
-    private final static String savedFileName = "savedFile.sav";
-    private final static Path pongFile = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
-    private final static Path pongSignatureFile = Paths.get("src", "main", "resources", "PongApp.sig");
-    private final static Path encryptedFilePath = Paths.get("src","main","resources", "savedFiles","encryptedFile");
+    private final static String SAVEDFILENAME = "savedFile.sav";
+    private final static Path PONGFILE = Paths.get("src", "main", "java", "com", "almasb", "fxglgames", "pong", "PongApp.java");
+    private final static Path PONGSIGNATUREFILE = Paths.get("src", "main", "resources", "PongApp.sig");
+    private final static Path ENCRYPTEDFILEPATH = Paths.get("src","main","resources", "savedFiles","encryptedFile");
     private BatComponent playerBat1, playerBat2;
     private Input clientInput;
     private String ipAddress;
@@ -152,22 +152,22 @@ public class PongApp extends GameApplication {
         /*
          * decrypt file and generate a savedFile.sav
          */
-        File encryptedFile= new File(String.valueOf(encryptedFilePath));
-        File savedFile =  new File(savedFileName);
+        File encryptedFile= new File(String.valueOf(ENCRYPTEDFILEPATH));
+        File savedFile =  new File(SAVEDFILENAME);
         Encrypt.decryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)), encryptedFile, savedFile);
-        getSaveLoadService().readAndLoadTask(savedFileName).run();
+        getSaveLoadService().readAndLoadTask(SAVEDFILENAME).run();
         savedFile.delete();
 
         getDialogService().showMessageBox("Game loaded!");
     }
 
     public static void saveLastGame() throws Exception {
-        getSaveLoadService().saveAndWriteTask(savedFileName).run();
+        getSaveLoadService().saveAndWriteTask(SAVEDFILENAME).run();
         /*
          * generates savedFileName, encrypts it and delete the saved file.
          */
-        File savedFile =  new File(savedFileName);
-        File encryptedFile= new File(String.valueOf(encryptedFilePath));
+        File savedFile =  new File(SAVEDFILENAME);
+        File encryptedFile= new File(String.valueOf(ENCRYPTEDFILEPATH));
         Encrypt.encryptFile(ks.GetSecretKey(HashingSHA3.bytesToHex(hash)),savedFile, encryptedFile);
         savedFile.delete();
 
@@ -217,8 +217,8 @@ public class PongApp extends GameApplication {
                         }
 
                         try {
-                            if (Files.exists(pongSignatureFile)) {
-                                SigningFile.verifySignature(ks.GetPublicKey(HashingSHA3.bytesToHex(hash)), pongFile);
+                            if (Files.exists(PONGSIGNATUREFILE)) {
+                                SigningFile.verifySignature(ks.GetPublicKey(HashingSHA3.bytesToHex(hash)), PONGFILE);
                             }
                         } catch (Exception e) {
                         }
@@ -242,7 +242,7 @@ public class PongApp extends GameApplication {
                         getDialogService().showConfirmationBox("Do you want load the previous game?", answer -> {
                             isPreviousGame = answer;
                             //If they want to load and the previous game exist
-                            if (isPreviousGame && Files.exists(encryptedFilePath)) {
+                            if (isPreviousGame && Files.exists(ENCRYPTEDFILEPATH)) {
                                 //load last game
                                 try {
                                     loadLastGame();
@@ -251,7 +251,7 @@ public class PongApp extends GameApplication {
                                 }
                             }
                             //If the previous game was not saved show a dialog
-                            else if (!Files.exists(encryptedFilePath)) {
+                            else if (!Files.exists(ENCRYPTEDFILEPATH)) {
                                 getDialogService().showMessageBox("There is no previous game! Starting a new game");
                             }
                         });
@@ -596,7 +596,7 @@ public class PongApp extends GameApplication {
      * it uses the class SigningFile*/
     public static void signFile() throws Exception {
         if(isHost) {
-            SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), pongFile);
+            SigningFile.generateSignature(ks.GetPrivateKey(HashingSHA3.bytesToHex(hash)), PONGFILE);
         }
     }
 
