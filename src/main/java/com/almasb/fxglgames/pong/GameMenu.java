@@ -1,19 +1,14 @@
 package com.almasb.fxglgames.pong;
 
-
 import com.almasb.fxgl.app.scene.FXGLMenu;
 import com.almasb.fxgl.app.scene.MenuType;
-import static com.almasb.fxgl.dsl.FXGL.getExecutor;
-import static com.almasb.fxgl.dsl.FXGL.getGameController;
 import javafx.scene.layout.VBox;
-
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 
 import static com.almasb.fxgl.dsl.FXGL.getDialogService;
 
 /**
- * @author Almas Baimagambetov (almaslvl@gmail.com)
+ * GameMenu represents the menu when a user pauses the game
+ * @author Almas Baimagambetov, Nael Louis
  */
 public class GameMenu extends FXGLMenu {
 
@@ -21,13 +16,17 @@ public class GameMenu extends FXGLMenu {
         super(MenuType.GAME_MENU);
 
         //Create the button for the main menu and their action
-        PongMenuButton resume = new PongMenuButton("Resume", () -> fireResume()); //Allow the user to continue the current game
+        PongMenuButton resume = new PongMenuButton("Resume", () -> fireResume());
+        
+        //Allow the user to save the current game
         PongMenuButton save = new PongMenuButton("Save", () -> {
             try {
                 PongApp.saveLastGame();
             } catch (Exception e) {
             }
-        }); //Allow the user to save the current game
+        }); 
+        
+        //Allow the user to load a previously saved game
         PongMenuButton load = new PongMenuButton("Load", () -> {
             try {
                 PongApp.loadLastGame();
@@ -35,7 +34,8 @@ public class GameMenu extends FXGLMenu {
                 e.getMessage();
             }
         });
-        PongMenuButton mainMenu = new PongMenuButton("Main Menu", () -> fireExitToMainMenu());
+        
+        //Allow user to exit game
         PongMenuButton exit = new PongMenuButton("Exit Game", () -> {
                 getDialogService().showMessageBox("File signed", () -> {
                     try {
@@ -48,7 +48,7 @@ public class GameMenu extends FXGLMenu {
         });
 
         //Create a vbox that acts like a container for the buttons and set the position to the lower left corner
-        VBox container = new VBox(resume, save, load, mainMenu, exit);
+        VBox container = new VBox(resume, save, load, exit);
         container.setTranslateX(100);
         container.setTranslateY(450);
 

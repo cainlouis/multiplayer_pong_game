@@ -23,6 +23,7 @@ public class InputValidation {
 
         toValidate = Normalizer.normalize(toValidate, Normalizer.Form.NFKC);
         toValidate = Normalizer.normalize(toValidate, Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
+        
         // Accepts any alphabetical letter, number, "." and ":" for IP. Excludes any other character
         Pattern patternObj = Pattern.compile("[^a-zA-Z0-9.:]");
         Matcher matcherObj = patternObj.matcher(toValidate);

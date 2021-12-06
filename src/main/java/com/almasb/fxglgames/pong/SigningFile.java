@@ -8,14 +8,24 @@ import java.security.*;
 
 import static com.almasb.fxgl.dsl.FXGL.getDialogService;
 
+/**
+ * SigningFile creates a digital signature and verifies keys using the signature
+ * @author Rodrigo Rivas Alfaro
+ */
 public class SigningFile {
 
     private static final String ALGORITHM = "SHA256withECDSA";
     private static final Path PONGSIGNFILE = Paths.get("src", "main", "resources","PongApp.sig");
 
-
     /**
      * Method for generating digital signature.
+     * @param privatekey
+     * @param path
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @throws SignatureException 
      */
     public static void generateSignature (PrivateKey privatekey, Path path) throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
@@ -35,9 +45,16 @@ public class SigningFile {
 
     }
 
-
     /**
      * Method for verifying digital signature.
+     * @param publickey
+     * @param path
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @throws SignatureException 
      */
     public static boolean verifySignature(PublicKey publickey, Path path)
             throws NoSuchAlgorithmException, NoSuchProviderException,
@@ -56,7 +73,7 @@ public class SigningFile {
         //Verify the signature.
         boolean validSignature = sig.verify(readSignature());
 
-        if(validSignature) {
+        if (validSignature) {
             getDialogService().showMessageBox("Signature is valid");
         } else {
             getDialogService().showMessageBox("Signature is NOT valid!!!");
