@@ -15,7 +15,7 @@ import static com.almasb.fxgl.dsl.FXGL.getDialogService;
 public class SigningFile {
 
     private static final String ALGORITHM = "SHA256withECDSA";
-    private static final Path pongSingFile = Paths.get("src", "main", "resources","PongApp.sig");
+    private static final Path PONGSIGNFILE = Paths.get("src", "main", "resources","PongApp.sig");
 
     /**
      * Method for generating digital signature.
@@ -40,9 +40,9 @@ public class SigningFile {
         String message = new String(Files.readAllBytes(path));
         sig.update(message.getBytes("UTF-8"));
         byte[] signature = sig.sign();
-        if (Files.notExists(pongSingFile)) {
-            Files.write(pongSingFile, signature);
-        }
+
+        Files.write(PONGSIGNFILE, signature);
+
     }
 
     /**
@@ -75,10 +75,8 @@ public class SigningFile {
 
         if (validSignature) {
             getDialogService().showMessageBox("Signature is valid");
-            System.out.println("\nSignature is valid");
         } else {
             getDialogService().showMessageBox("Signature is NOT valid!!!");
-            System.out.println("\nSignature is NOT valid!!!");
         }
 
         return validSignature;
@@ -86,7 +84,7 @@ public class SigningFile {
 
 
     public static byte[] readSignature() throws IOException {
-        return Files.readAllBytes(pongSingFile);
+        return Files.readAllBytes(PONGSIGNFILE);
     }
 
 }

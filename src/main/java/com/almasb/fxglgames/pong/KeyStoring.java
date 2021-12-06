@@ -18,8 +18,8 @@ public class KeyStoring {
     private static final String KEY_PAIR_ALIAS = "myPairKey";
     private static final String SECRET_KEY = "secretKey";
     private static final String ALGORITHM = "PKCS12";
-    private static final String dir = "src/main/resources/keystore/keystore.p12";
-    private String[] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
+    private static final  String DIR = "src/main/resources/keystore/keystore.p12";
+    private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", DIR, "-storepass", ""};
 
     /**
      * Parameterized Constructor for KeyStoring. Sets up the hash and keyStore
@@ -72,7 +72,7 @@ public class KeyStoring {
     */
     public void LoadKey(String hash) throws IOException, CertificateException, NoSuchAlgorithmException {
         //loads the p12 file and checks if the hash matches with the keystore's hash.
-        FileInputStream fi = new FileInputStream(dir);
+        FileInputStream fi = new FileInputStream(DIR);
         keyStore.load(fi, hash.toCharArray());
 
         if(fi != null){
@@ -96,7 +96,7 @@ public class KeyStoring {
         keyStore.setEntry(SECRET_KEY, skEntry, protParam);
         FileOutputStream fos = null;
         try {
-            fos = new FileOutputStream(dir);
+            fos = new FileOutputStream(DIR);
             keyStore.store(fos, hash.toCharArray());
         } finally {
             if (fos != null) {
