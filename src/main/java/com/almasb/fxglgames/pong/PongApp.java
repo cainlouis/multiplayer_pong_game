@@ -76,11 +76,11 @@ import java.util.Optional;
  */
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
-    boolean isServer;
+    static boolean isServer;
     boolean isPaused;
     static boolean isHost;
     boolean isClient;
-    private Connection<Bundle> connection;
+    private static Connection<Bundle> connection;
     boolean pass;
     private static KeyStoring ks;
     private static byte[] hash;
@@ -160,10 +160,25 @@ public class PongApp extends GameApplication {
     }
     
     /**
+     * pingServerToLoad() pings server to load the save file
+     * @throws Exception 
+     */
+    public static void pingServerToLoad() throws Exception {
+        if (!isServer) {
+            var bundle = new Bundle("saveGame");
+            bundle.put("loadGame", true);
+            connection.send(bundle);
+        } else {
+            loadLastGame();
+        }
+    }
+    
+    /**
      * loadLastGame() takes encrypted save file and loads contents onto current game
      * @throws Exception 
      */
     public static void loadLastGame() throws Exception {
+        
         /*
          * decrypt file and generate a savedFile.sav
          */
@@ -177,11 +192,27 @@ public class PongApp extends GameApplication {
     }
     
     /**
+     * pingServerToSave() pings server to save the game
+     * @throws Exception 
+     */
+    public static void pingServerToSave() throws Exception {
+        if (!isServer) {
+            var bundle = new Bundle("saveGame");
+            bundle.put("saveGame", true);
+            connection.send(bundle);
+        }
+        else {
+            saveLastGame();
+        }
+    }
+    
+    /**
      * saveLastGame() saves current game as file and encrypts it when invoked
      * @throws Exception 
      */
     public static void saveLastGame() throws Exception {
-        getSaveLoadService().saveAndWriteTask(SAVEDFILENAME).run();
+        getSaveLoadService().saveAndWriteTask(savedFileName).run();
+        
         /*
          * generates savedFileName, encrypts it and delete the saved file.
          */
@@ -277,7 +308,7 @@ public class PongApp extends GameApplication {
                                 }
                             }
                             //If the previous game was not saved show a dialog
-                            else if (!Files.exists(ENCRYPTEDFILEPATH)) {
+                            else if (isPreviousGame && !Files.exists(encryptedFilePath)) {
                                 getDialogService().showMessageBox("There is no previous game! Starting a new game");
                             }
                         });
@@ -350,12 +381,38 @@ public class PongApp extends GameApplication {
      */
     private void setConnectionListener() {
         // Sets up a listener to receive any message sent by either server or client. Pauses or resumes game accordingly
-        connection.addMessageHandler((connect, message) -> {
+        connection.addMessageHandlerFX((connect, message) -> {
             if (message.exists("isPaused")) {
                 if (message.get("isPaused")) {
                     getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
                 } else {
                     getExecutor().startAsyncFX(() -> getGameController().resumeEngine());
+                }
+            }
+           
+            // Ping server to save
+            if (message.exists("saveGame")) {
+                System.out.println("save reached");
+                if (message.get("saveGame")) {
+                    try {
+                        System.out.println("save last game reached");
+                        saveLastGame();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            
+            // Ping server to load
+            if (message.exists("loadGame")) {
+                System.out.println("load reached");
+                if (message.get("loadGame")) {
+                    try {
+                        System.out.println("load last game reached");
+                        loadLastGame();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });
