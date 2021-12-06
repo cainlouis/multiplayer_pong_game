@@ -18,8 +18,8 @@ public class KeyStoring {
     private static final String KEY_PAIR_ALIAS = "myPairKey";
     private static final String SECRET_KEY = "secretKey";
     private static final String ALGORITHM = "PKCS12";
-    private static final  String DIR = "src/main/resources/keystore/keystore.p12";
-    private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", DIR, "-storepass", ""};
+    private static final String DIR = "src/main/resources/keystore/keystore.p12";
+    private String[] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", DIR, "-storepass", ""};
 
     /**
      * Parameterized Constructor for KeyStoring. Sets up the hash and keyStore
@@ -94,14 +94,8 @@ public class KeyStoring {
         // creates a new entry in the p12 file with the secret key
         SecretKeyEntry skEntry = new SecretKeyEntry(sk);
         keyStore.setEntry(SECRET_KEY, skEntry, protParam);
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(DIR);
+        try (FileOutputStream fos = new FileOutputStream(DIR)) {
             keyStore.store(fos, hash.toCharArray());
-        } finally {
-            if (fos != null) {
-                fos.close();
-            }
         }
     }
 
