@@ -77,7 +77,6 @@ import java.util.Optional;
 public class PongApp extends GameApplication {
     private final int TCP_SERVER_PORT = 7777;
     static boolean isServer;
-    static boolean isServerPaused;
     boolean isPaused;
     static boolean isHost;
     boolean isClient;
@@ -161,6 +160,10 @@ public class PongApp extends GameApplication {
         });
     }
     
+    /**
+     * pingServerToLoad() pings server to load the save file
+     * @throws Exception 
+     */
     public static void pingServerToLoad() throws Exception {
         if (!isServer) {
             var bundle = new Bundle("saveGame");
@@ -190,7 +193,7 @@ public class PongApp extends GameApplication {
     }
     
     /**
-     * saveLastGame() saves current game as file and encrypts it when invoked
+     * pingServerToSave() pings server to save the game
      * @throws Exception 
      */
     public static void pingServerToSave() throws Exception {
@@ -202,7 +205,6 @@ public class PongApp extends GameApplication {
         else {
             saveLastGame();
         }
-        
     }
     
     /**
