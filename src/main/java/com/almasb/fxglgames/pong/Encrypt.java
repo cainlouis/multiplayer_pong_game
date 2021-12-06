@@ -16,13 +16,13 @@ public class Encrypt {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 16;
-    private static final Path IVPath = Paths.get("src", "main", "resources","keystore","IV.dat");
+    private static final Path IVPATH = Paths.get("src", "main", "resources","keystore","IV.dat");
 
     //Method to encrypt file using asymmetric key crypto
     public static void encryptFile(SecretKey secretKey, File inputFile, File outputFile)
             throws Exception{
-        
-        if (Files.notExists(IVPath)){
+
+         if(Files.notExists(IVPATH)){
              generateIV();
         }
 
@@ -106,7 +106,7 @@ public class Encrypt {
         byte[] IV = new byte[GCM_IV_LENGTH];
         SecureRandom random = new SecureRandom();
         random.nextBytes(IV);
-        Files.write(IVPath, IV);
+        Files.write(IVPATH, IV);
     }
     
     /**
@@ -115,6 +115,6 @@ public class Encrypt {
      * @throws IOException 
      */
     private static byte[] readIV() throws IOException {
-        return Files.readAllBytes(IVPath);
+         return Files.readAllBytes(IVPATH);
     }
 }
