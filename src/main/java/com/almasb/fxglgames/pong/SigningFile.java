@@ -8,6 +8,10 @@ import java.security.*;
 
 import static com.almasb.fxgl.dsl.FXGL.getDialogService;
 
+/**
+ * SigningFile creates a digital signature and verifies keys using the signature
+ * @author Rodrigo Rivas Alfaro
+ */
 public class SigningFile {
 
     private static final String ALGORITHM = "SHA256withECDSA";
@@ -26,7 +30,7 @@ public class SigningFile {
     public static void generateSignature (PrivateKey privatekey, Path path) throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
 
-        //Create an instance of the signature scheme for the given signature ALGORITHM
+        //Create an instance of the signature scheme for the given signature algorithm
         Signature sig = Signature.getInstance(ALGORITHM, "SunEC");
 
         //Initialize the signature scheme
@@ -36,11 +40,10 @@ public class SigningFile {
         String message = new String(Files.readAllBytes(path));
         sig.update(message.getBytes("UTF-8"));
         byte[] signature = sig.sign();
-        if(Files.notExists(pongSingFile)) {
+        if (Files.notExists(pongSingFile)) {
             Files.write(pongSingFile, signature);
         }
     }
-
 
     /**
      * Method for verifying digital signature.
@@ -57,7 +60,7 @@ public class SigningFile {
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
 
-        //Create an instance of the signature scheme for the given signature ALGORITHM
+        //Create an instance of the signature scheme for the given signature algorithm
         Signature sig = Signature.getInstance(ALGORITHM, "SunEC");
 
         //Initialize the signature verification scheme.
@@ -70,7 +73,7 @@ public class SigningFile {
         //Verify the signature.
         boolean validSignature = sig.verify(readSignature());
 
-        if(validSignature) {
+        if (validSignature) {
             getDialogService().showMessageBox("Signature is valid");
             System.out.println("\nSignature is valid");
         } else {

@@ -18,8 +18,8 @@ public class KeyStoring {
     private static final String KEY_PAIR_ALIAS = "myPairKey";
     private static final String SECRET_KEY = "secretKey";
     private static final String ALGORITHM = "PKCS12";
-    private static final  String dir = "src/main/resources/keystore/keystore.p12";
-    private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
+    private static final String dir = "src/main/resources/keystore/keystore.p12";
+    private String[] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
 
     /**
      * Parameterized Constructor for KeyStoring. Sets up the hash and keyStore
