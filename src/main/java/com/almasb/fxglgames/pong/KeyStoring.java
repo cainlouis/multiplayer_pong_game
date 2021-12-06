@@ -8,22 +8,33 @@ import java.security.KeyStore.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
+/**
+ * KeyStoring represents the class that stores the Secret Key, the Public Key and the Private Key
+ * @author Rodrigo Rivas Alfaro
+ */
 public class KeyStoring {
     private KeyStore keyStore;
     private String hash;
     private static final String KEY_PAIR_ALIAS = "myPairKey";
     private static final String SECRET_KEY = "secretKey";
     private static final String ALGORITHM = "PKCS12";
-    private static final  String dir = "src/main/resources/keystore/keystore.p12";
-    private String [] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
+    private static final String dir = "src/main/resources/keystore/keystore.p12";
+    private String[] cmdArg = {"keytool", "-genkeypair", "-alias", KEY_PAIR_ALIAS,  "-keyalg", "EC", "-keysize", "256", "-dname", "CN=pongKey", "-validity", "365", "-storetype", "PKCS12", "-keystore", dir, "-storepass", ""};
 
+    /**
+     * Parameterized Constructor for KeyStoring. Sets up the hash and keyStore
+     * @param hash
+     * @throws KeyStoreException 
+     */
     public KeyStoring(String hash) throws KeyStoreException {
         this.hash = hash;
         cmdArg[cmdArg.length-1] = hash;
         keyStore = KeyStore.getInstance(ALGORITHM);
     }
 
-    // Run just the first time when the file does not exist
+    /**
+     * Run just the first time when the file does not exist
+     */
     public void createStoredKeys(){
         try {
             // Create the private and public key using keytool command.
@@ -31,13 +42,12 @@ public class KeyStoring {
 
             //Create the secret key and store it in the keystore file
             saveSecretKey();
-
-            // Might need clean the hash after the file is created.
-
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+    
     /*
     * This method creates a process builder to run they keytools command with all the parameters
     * to create a private and a public keys
@@ -70,7 +80,10 @@ public class KeyStoring {
         }
     }
 
-
+    /**
+     * This method generates the Secret Key and stores it to the keyStore object
+     * @throws Exception 
+     */
     private void saveSecretKey() throws Exception {
         // Load the keystore saved in the keystore/keystore.p12
         LoadKey(hash);
@@ -92,7 +105,12 @@ public class KeyStoring {
         }
     }
 
-//Generates a Secret key using AES Algorithm
+    /**
+     * Generates a Secret key using AES Algorithm
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchAlgorithmException 
+     */
     private SecretKey GenerateKey() throws NoSuchAlgorithmException, NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256); //Initialize the key generator
@@ -100,8 +118,7 @@ public class KeyStoring {
         return key;
     }
 
-    /*Methods to get each key*/
-
+    // Getters for each key
     public PrivateKey GetPrivateKey(String hash) throws Exception {
         LoadKey(hash);
         ProtectionParameter protParam = new PasswordProtection(hash.toCharArray());
@@ -124,5 +141,4 @@ public class KeyStoring {
         SecretKey mySecretKey = skEntry.getSecretKey();
         return mySecretKey;
     }
-
 }

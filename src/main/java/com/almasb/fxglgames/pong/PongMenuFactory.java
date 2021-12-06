@@ -1,11 +1,12 @@
 package com.almasb.fxglgames.pong;
 
 import com.almasb.fxgl.app.scene.FXGLMenu;
-import com.almasb.fxgl.app.scene.MenuType;
 import com.almasb.fxgl.app.scene.SceneFactory;
-import static com.almasb.fxgl.dsl.FXGL.getExecutor;
-import static com.almasb.fxgl.dsl.FXGL.getGameController;
 
+/**
+ * PongMenuFactory creates the objects of MainMenu and GameMenu
+ * @author Nael Louis
+ */
 public class PongMenuFactory extends SceneFactory {
     @Override
     public FXGLMenu newMainMenu() {

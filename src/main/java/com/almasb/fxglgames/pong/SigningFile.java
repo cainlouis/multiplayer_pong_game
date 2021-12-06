@@ -1,8 +1,6 @@
 package com.almasb.fxglgames.pong;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,20 +8,30 @@ import java.security.*;
 
 import static com.almasb.fxgl.dsl.FXGL.getDialogService;
 
+/**
+ * SigningFile creates a digital signature and verifies keys using the signature
+ * @author Rodrigo Rivas Alfaro
+ */
 public class SigningFile {
 
-    private static final String algorithm = "SHA256withECDSA";
+    private static final String ALGORITHM = "SHA256withECDSA";
     private static final Path pongSingFile = Paths.get("src", "main", "resources","PongApp.sig");
-
 
     /**
      * Method for generating digital signature.
+     * @param privatekey
+     * @param path
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @throws SignatureException 
      */
     public static void generateSignature (PrivateKey privatekey, Path path) throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
 
         //Create an instance of the signature scheme for the given signature algorithm
-        Signature sig = Signature.getInstance(algorithm, "SunEC");
+        Signature sig = Signature.getInstance(ALGORITHM, "SunEC");
 
         //Initialize the signature scheme
         sig.initSign(privatekey);
@@ -32,21 +40,28 @@ public class SigningFile {
         String message = new String(Files.readAllBytes(path));
         sig.update(message.getBytes("UTF-8"));
         byte[] signature = sig.sign();
-        if(Files.notExists(pongSingFile)) {
+        if (Files.notExists(pongSingFile)) {
             Files.write(pongSingFile, signature);
         }
     }
 
-
     /**
      * Method for verifying digital signature.
+     * @param publickey
+     * @param path
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @throws SignatureException 
      */
     public static boolean verifySignature(PublicKey publickey, Path path)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidKeyException, IOException, SignatureException {
 
         //Create an instance of the signature scheme for the given signature algorithm
-        Signature sig = Signature.getInstance(algorithm, "SunEC");
+        Signature sig = Signature.getInstance(ALGORITHM, "SunEC");
 
         //Initialize the signature verification scheme.
         sig.initVerify(publickey);
@@ -58,7 +73,7 @@ public class SigningFile {
         //Verify the signature.
         boolean validSignature = sig.verify(readSignature());
 
-        if(validSignature) {
+        if (validSignature) {
             getDialogService().showMessageBox("Signature is valid");
             System.out.println("\nSignature is valid");
         } else {

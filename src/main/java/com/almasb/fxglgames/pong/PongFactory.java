@@ -49,11 +49,15 @@ import static com.almasb.fxgl.dsl.FXGL.entityBuilder;
 import static com.almasb.fxgl.dsl.FXGL.getip;
 
 /**
- * @author Almas Baimagambetov (AlmasB) (almaslvl@gmail.com)
+ * PongFactory class is a factory class that creates needed entities for the pong game
+ * @author Almas Baimagambetov, Nael Louis
  */
 public class PongFactory implements EntityFactory {
-
-
+    /**
+     * newBall creates a Ball entity along with its functionality
+     * @param data
+     * @return 
+     */
     @Spawns("ball")
     public Entity newBall(SpawnData data) {
         PhysicsComponent physics = new PhysicsComponent();
@@ -110,6 +114,11 @@ public class PongFactory implements EntityFactory {
                 .build();
     }
 
+    /**
+     * newBat() creates a Bat Entity its own properties and physics
+     * @param data
+     * @return 
+     */
     @Spawns("bat")
     public Entity newBat(SpawnData data) {
         boolean exists;
