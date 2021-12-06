@@ -211,7 +211,7 @@ public class PongApp extends GameApplication {
      * @throws Exception 
      */
     public static void saveLastGame() throws Exception {
-        getSaveLoadService().saveAndWriteTask(savedFileName).run();
+        getSaveLoadService().saveAndWriteTask(SAVEDFILENAME).run();
         
         /*
          * generates savedFileName, encrypts it and delete the saved file.
@@ -308,7 +308,7 @@ public class PongApp extends GameApplication {
                                 }
                             }
                             //If the previous game was not saved show a dialog
-                            else if (isPreviousGame && !Files.exists(encryptedFilePath)) {
+                            else if (isPreviousGame && !Files.exists(ENCRYPTEDFILEPATH)) {
                                 getDialogService().showMessageBox("There is no previous game! Starting a new game");
                             }
                         });
@@ -632,6 +632,7 @@ public class PongApp extends GameApplication {
             var bundle = new Bundle("isPaused");
             isPaused = false;
             bundle.put("isPaused", false);
+            System.out.println(isPaused);
             connection.send(bundle);
         }
         
