@@ -12,6 +12,7 @@ public class PongMenuFactory extends SceneFactory {
     public FXGLMenu newMainMenu() {
         return new MainMenu();
     }
+    
     @Override
     public FXGLMenu newGameMenu() {
         return new GameMenu();

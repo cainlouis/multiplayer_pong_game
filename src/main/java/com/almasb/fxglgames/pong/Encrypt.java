@@ -19,11 +19,10 @@ public class Encrypt {
     private static final Path IVPATH = Paths.get("src", "main", "resources","keystore","IV.dat");
 
     //Method to encrypt file using asymmetric key crypto
-    public static void encryptFile(SecretKey secretKey, File inputFile, File outputFile)
-            throws Exception{
+    public static void encryptFile(SecretKey secretKey, File inputFile, File outputFile) throws Exception {
 
-         if(Files.notExists(IVPATH)){
-             generateIV();
+        if (Files.notExists(IVPATH)){
+            generateIV();
         }
 
         GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, readIV());

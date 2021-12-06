@@ -82,7 +82,11 @@ public class SigningFile {
         return validSignature;
     }
 
-
+    /**
+     * readSignature() returns the bytes of the signed PongApp.java
+     * @return
+     * @throws IOException 
+     */
     public static byte[] readSignature() throws IOException {
         return Files.readAllBytes(PONGSIGNFILE);
     }

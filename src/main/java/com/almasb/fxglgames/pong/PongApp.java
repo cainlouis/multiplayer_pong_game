@@ -211,7 +211,7 @@ public class PongApp extends GameApplication {
      * @throws Exception 
      */
     public static void saveLastGame() throws Exception {
-        getSaveLoadService().saveAndWriteTask(savedFileName).run();
+        getSaveLoadService().saveAndWriteTask(SAVEDFILENAME).run();
         
         /*
          * generates savedFileName, encrypts it and delete the saved file.
@@ -308,7 +308,7 @@ public class PongApp extends GameApplication {
                                 }
                             }
                             //If the previous game was not saved show a dialog
-                            else if (isPreviousGame && !Files.exists(encryptedFilePath)) {
+                            else if (isPreviousGame && !Files.exists(ENCRYPTEDFILEPATH)) {
                                 getDialogService().showMessageBox("There is no previous game! Starting a new game");
                             }
                         });
@@ -382,6 +382,8 @@ public class PongApp extends GameApplication {
     private void setConnectionListener() {
         // Sets up a listener to receive any message sent by either server or client. Pauses or resumes game accordingly
         connection.addMessageHandlerFX((connect, message) -> {
+            
+            // Control pausing and resuming
             if (message.exists("isPaused")) {
                 if (message.get("isPaused")) {
                     getExecutor().startAsyncFX(() -> getGameController().pauseEngine());
@@ -392,10 +394,8 @@ public class PongApp extends GameApplication {
            
             // Ping server to save
             if (message.exists("saveGame")) {
-                System.out.println("save reached");
                 if (message.get("saveGame")) {
                     try {
-                        System.out.println("save last game reached");
                         saveLastGame();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -405,10 +405,8 @@ public class PongApp extends GameApplication {
             
             // Ping server to load
             if (message.exists("loadGame")) {
-                System.out.println("load reached");
                 if (message.get("loadGame")) {
                     try {
-                        System.out.println("load last game reached");
                         loadLastGame();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -693,7 +691,6 @@ public class PongApp extends GameApplication {
         
         //checks if the p12 file exists, if it does not, it creates a new one or tries to load the key
         if (Files.notExists(Paths.get("src", "main", "resources", "keystore", "keystore.p12"))) {
-            System.out.println("keys created");
             isPassword = true;
             ks.createStoredKeys();
         }
@@ -701,11 +698,10 @@ public class PongApp extends GameApplication {
         try {
             ks.LoadKey(HashingSHA3.bytesToHex(hash));
             isPassword = true;
-            System.out.println("keys already created, password correct");
         } catch (CertificateException e) {
-            System.out.println("Certificate");
+            System.out.println("An error occured with the Certificate. Please try again!");
         } catch (IOException e) {
-            System.out.println("Wrong Password");
+            System.out.println("Wrong Password! Please try again.");
         }
         return isPassword;
     }   
@@ -718,13 +714,11 @@ public class PongApp extends GameApplication {
         // Checks if saved files directroy has been created, if not creates it
         Path saveFilesDir = Paths.get("src", "main", "resources", "savedFiles");
         if (Files.notExists(saveFilesDir)) {
-            System.out.println("created saved files directory");
             Files.createDirectories(saveFilesDir);
         }
         // Checks if keystore directory is created, if not creates it
         Path keystoreDir = Paths.get("src", "main", "resources", "keystore");
         if (Files.notExists(keystoreDir)) {
-            System.out.println("created keystore directory");
             Files.createDirectories(keystoreDir);
         }
     }
