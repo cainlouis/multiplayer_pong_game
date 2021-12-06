@@ -628,7 +628,6 @@ public class PongApp extends GameApplication {
 
         //hashing the password
         hash = HashingSHA3.computeHash(pass);
-        System.out.println(HashingSHA3.bytesToHex(hash));
 
         // creating a keystore object with the hash provided.
         ks = new KeyStoring(HashingSHA3.bytesToHex(hash));
