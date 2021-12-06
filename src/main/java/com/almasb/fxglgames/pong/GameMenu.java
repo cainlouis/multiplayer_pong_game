@@ -20,16 +20,18 @@ public class GameMenu extends FXGLMenu {
         
         //Allow the user to save the current game
         PongMenuButton save = new PongMenuButton("Save", () -> {
+            System.out.println("REACHES");
             try {
-                PongApp.saveLastGame();
+                PongApp.pingServerToSave();
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }); 
         
         //Allow the user to load a previously saved game
         PongMenuButton load = new PongMenuButton("Load", () -> {
             try {
-                PongApp.loadLastGame();
+                PongApp.pingServerToLoad();
             } catch (Exception e) {
                 e.getMessage();
             }
